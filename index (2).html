@@ -929,36 +929,63 @@ function fetchSheetViz(gid,callback){
 }
 
 // ── LOAD ALL DATA
-function loadAllData(onComplete){
-  // Chargement IMMÉDIAT depuis les données embarquées — login instantané
-  userData      = getDemoUsers();
-  allData       = getDemoImportData();
-  protocoleData = getDemoProtocoles();
-  dataLoaded    = true;
-  onComplete();
-  // Tentative de refresh réseau en arrière-plan (silencieuse)
-  setTimeout(function(){ refreshFromNetwork(); }, 500);
+function loadAllData(onComplete) {
+  var loginBtn = document.getElementById('login-btn');
+  var loginErr = document.getElementById('login-error');
+  if (loginBtn) { loginBtn.disabled = true; loginBtn.textContent = 'Chargement…'; }
+  if (loginErr) loginErr.textContent = '';
+
+  var sheetsLoaded = false;
+  var timedOut = false;
+
+  // Fallback : si Sheets ne répond pas en 8s → données embarquées
+  var fallbackTimer = setTimeout(function() {
+    if (sheetsLoaded) return;
+    timedOut = true;
+    userData      = getDemoUsers();
+    allData       = getDemoImportData();
+    protocoleData = getDemoProtocoles();
+    dataLoaded    = true;
+    if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Accéder à mon espace'; }
+    if (loginErr) loginErr.textContent = '⚠️ Mode hors-ligne — données locales.';
+    onComplete();
+  }, 8000);
+
+  // Chargement depuis Sheets (source principale)
+  fetchSheetViz(GID_USERS, function(err, rows) {
+    if (timedOut) return;
+    userData = (!err && rows && rows.length > 0) ? rows : getDemoUsers();
+    fetchSheetViz(GID_IMPORT, function(e2, r2) {
+      if (timedOut) return;
+      allData = (!e2 && r2 && r2.length > 0) ? r2 : getDemoImportData();
+      fetchSheetViz(GID_PROTOCOLES, function(e3, r3) {
+        if (timedOut) return;
+        clearTimeout(fallbackTimer);
+        sheetsLoaded = true;
+        protocoleData = (!e3 && r3 && r3.length > 0) ? r3 : getDemoProtocoles();
+        dataLoaded = true;
+        if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Accéder à mon espace'; }
+        onComplete();
+      });
+    });
+  });
 }
 
-function refreshFromNetwork(){
-  // Essaie Google Viz API en arrière-plan
-  var done = false;
-  fetchSheetViz(GID_USERS, function(err, rows){
-    if(done) return;
-    if(!err && rows && rows.length > 0){
-      done = true;
+function refreshFromNetwork() {
+  fetchSheetViz(GID_USERS, function(err, rows) {
+    if (!err && rows && rows.length > 0) {
       userData = rows;
-      fetchSheetViz(GID_IMPORT, function(e2, r2){
-        if(!e2 && r2 && r2.length > 0){ allData = r2; }
-        fetchSheetViz(GID_PROTOCOLES, function(e3, r3){
-          if(!e3 && r3 && r3.length > 0){ protocoleData = r3; }
-          // Rafraîchir l'affichage si déjà connecté
-          if(currentUser){ renderHome(); }
+      fetchSheetViz(GID_IMPORT, function(e2, r2) {
+        if (!e2 && r2 && r2.length > 0) allData = r2;
+        fetchSheetViz(GID_PROTOCOLES, function(e3, r3) {
+          if (!e3 && r3 && r3.length > 0) protocoleData = r3;
+          if (currentUser) { renderHome(); renderHistorique(); }
         });
       });
     }
   });
 }
+
 
 // ── DEMO DATA
 function getDemoUsers(){return[{email:'n.steinfels@hotmail.com','Prénom':'Nathalie',Nom:'Steinfels',Photo:'https://drive.google.com/file/d/101zHEIy1jeT1oJ1FBTAOnd2V2GI7LA-M/view?usp=drive_link','Date de naissance':'',Poids:''}];}
