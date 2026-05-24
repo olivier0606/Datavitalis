@@ -915,8 +915,10 @@ function parseCSVLine(line){var result=[],current='',inQ=false;for(var i=0;i<lin
 
 // ── CSV FETCH (remplace gviz qui retourne 404)
 function fetchSheetViz(gid, callback) {
-  var url = 'https://docs.google.com/spreadsheets/d/e/' + SHEET_ID + '/pub?output=csv&gid=' + gid;
-  fetch(url)
+  // Cache-buster : force Google à servir les données fraîches
+  var bust = Date.now();
+  var url = 'https://docs.google.com/spreadsheets/d/e/' + SHEET_ID + '/pub?output=csv&gid=' + gid + '&_=' + bust;
+  fetch(url, { cache: 'no-store' })
     .then(function(r) {
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return r.text();
@@ -1567,57 +1569,123 @@ function sendToMakeWebhook(webhookUrl,base64,mimeType,filename,docType){
   xhr.send(payload);
 }
 
-function handleScanSuccess(resp,dateStr,docType){
-  var typeInfo=SCAN_TYPES[docType]||SCAN_TYPES.analyse;
-  var badge=document.getElementById('scan-result-type-badge');
-  if(badge){badge.textContent=typeInfo.label;badge.className='scan-result-type-badge '+typeInfo.badge;}
-  var dateEl=document.getElementById('scan-result-date');if(dateEl)dateEl.textContent='Traité le '+formatDate(dateStr);
-  var markersEl=document.getElementById('scan-result-markers');if(markersEl)markersEl.innerHTML='';
+function handleScanSuccess(resp, dateStr, docType) {
+  var typeInfo = SCAN_TYPES[docType] || SCAN_TYPES.analyse;
+  var badge = document.getElementById('scan-result-type-badge');
+  if (badge) { badge.textContent = typeInfo.label; badge.className = 'scan-result-type-badge ' + typeInfo.badge; }
+  var dateEl = document.getElementById('scan-result-date');
+  if (dateEl) dateEl.textContent = 'Trait\u00e9 le ' + formatDate(dateStr);
+  var markersEl = document.getElementById('scan-result-markers');
+  if (markersEl) markersEl.innerHTML = '';
 
-  if(docType==='analyse'){
-    var newRow={email:currentUser?currentUser.email:'',Date:dateStr,'Glycémie':resp['Glycémie']||resp['Glycemie']||'','Ferritine':resp['Ferritine']||resp['ferritine']||'','Cortisol':resp['Cortisol']||resp['cortisol']||'','Vitamine D':resp['Vitamine D']||resp['Vitamine_D']||'','Statut IA':'Analysé','image_url':resp['image_url']||'',row_id:resp['row_id']||generateRowId()};
-    allData.unshift(newRow);
-  // Sauvegarder dans l'historique local
-  var thumbImgEl = document.getElementById('scan-thumb-img');
-  var thumbSrc = thumbImgEl ? thumbImgEl.src : '';
-  saveScanToHistory('analyses', resp, dateStr, thumbSrc);
-    if(markersEl){var ml=['Glycémie','Ferritine','Cortisol','Vitamine D'];for(var i=0;i<ml.length;i++){(function(m){var val=newRow[m];var cfg=MARKERS_CONFIG[m];var status=val?cfg.getStatus(val):null;var card=document.createElement('div');card.style.cssText='background:var(--white);border-radius:12px;padding:12px;border:1px solid var(--border);';card.innerHTML='<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:'+(status?STATUS_COLORS[status.cls]:'#A0A0A0')+';margin-bottom:6px;">'+m+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:600;color:var(--text-primary);">'+(val?parseFloat(val).toLocaleString('fr-FR'):'—')+'</div><div style="font-size:10px;color:var(--text-muted);">'+cfg.unit+'</div>'+(status?'<div class="status-badge '+status.cls+'" style="margin-top:6px"><div class="status-dot '+status.cls+'"></div>'+status.label+'</div>':'');markersEl.appendChild(card);})(ml[i]);}}
-    setTimeout(function(){
-      renderHome();
-      renderGraphique();
-      // Refresh depuis Sheets pour que l'historique soit à jour immédiatement
-      refreshFromNetwork();
-    },300);
+  // Construire la ligne locale avec row_id fourni par Make (via resp) ou g\u00e9n\u00e9r\u00e9 localement
+  var rowId = resp['row_id'] || generateRowId();
+  var thumbEl = document.getElementById('scan-thumb-img');
+  var thumbSrc = thumbEl ? thumbEl.src : '';
 
-  } else if(docType==='ordonnance'){
-    var thumbO = document.getElementById('scan-thumb-img');
-    saveScanToHistory('ordonnances', resp, dateStr, thumbO ? thumbO.src : '');
-    // Sauvegarder dans allData pour sync multi-appareils via Sheets
-    var newRowO={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'ordonnance',medecin:resp.medecin||'',specialite:resp.specialite||'',notes:resp.notes||'',renouvellement:resp.renouvellement||'','Statut IA':'Analysé','image_url':resp['image_url']||'',row_id:resp['row_id']||generateRowId()};
-    allData.unshift(newRowO);
-    setTimeout(function(){ refreshFromNetwork(); }, 1500);
-    if(markersEl){
-      var h='<div style="grid-column:1/-1">';
-      if(resp.medecin)h+='<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;">👨‍⚕️ '+resp.medecin+(resp.specialite?' · '+resp.specialite:'')+'</div>';
-      if(resp.medicaments&&resp.medicaments.length){for(var j=0;j<resp.medicaments.length;j++){var med=resp.medicaments[j];h+='<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid var(--green);"><div style="font-size:13px;font-weight:600;color:var(--text-primary);">'+med.nom+(med.dosage?' <span style=\'font-weight:400;color:var(--text-muted)\'>'+med.dosage+'</span>':'')+'</div>'+(med.posologie?'<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">'+med.posologie+'</div>':'')+(med.duree?'<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">⏱ '+med.duree+'</div>':'')+'</div>';}}
-      else{h+='<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px;">Ordonnance enregistrée.</div>';}
-      h+='</div>';markersEl.innerHTML=h;
-    }
-  } else if(docType==='imagerie'){
-    var thumbI = document.getElementById('scan-thumb-img');
-    saveScanToHistory('imagerie', resp, dateStr, thumbI ? thumbI.src : '');
-    // Sauvegarder dans allData pour sync multi-appareils via Sheets
-    var newRowI={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'imagerie',type_examen:resp.type_examen||'',region:resp.region||'',conclusions:resp.conclusions||'',recommandations:resp.recommandations||'','Statut IA':'Analysé','image_url':resp['image_url']||'',row_id:resp['row_id']||generateRowId()};
-    allData.unshift(newRowI);
-    setTimeout(function(){ refreshFromNetwork(); }, 1500);
-    if(markersEl){
-      var ih='<div style="grid-column:1/-1">';
-      if(resp.type_examen)ih+='<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid #3B6B9E;"><div style="font-size:11px;font-weight:700;color:#3B6B9E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Examen</div><div style="font-size:13px;font-weight:600;">'+resp.type_examen+'</div>'+(resp.region?'<div style="font-size:11px;color:var(--text-secondary);">'+resp.region+'</div>':'')+'</div>';
-      if(resp.conclusions)ih+='<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;"><div style="font-size:11px;font-weight:700;color:#3B6B9E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Conclusions</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">'+resp.conclusions+'</div></div>';
-      if(resp.recommandations)ih+='<div style="background:#EBF2FA;border-radius:10px;padding:12px;border-left:3px solid #3B6B9E;"><div style="font-size:12px;color:#2A4E7A;line-height:1.5;">📋 '+resp.recommandations+'</div></div>';
-      ih+='</div>';markersEl.innerHTML=ih;
+  var newRow = {
+    email          : currentUser ? currentUser.email : '',
+    Date           : dateStr,
+    doc_type       : docType === 'analyse' ? 'analyse' : docType,
+    'Statut IA'    : 'Analys\u00e9',
+    'image_url'    : resp['image_url'] || '',
+    row_id         : rowId,
+    // Champs analyse
+    'Glyc\u00e9mie'  : resp['Glyc\u00e9mie'] || resp['Glycemie'] || '',
+    'Ferritine'    : resp['Ferritine'] || resp['ferritine'] || '',
+    'Cortisol'     : resp['Cortisol'] || resp['cortisol'] || '',
+    'Vitamine D'   : resp['Vitamine D'] || resp['Vitamine_D'] || '',
+    // Champs ordonnance
+    medecin        : resp.medecin || '',
+    specialite     : resp.specialite || '',
+    notes          : resp.notes || '',
+    renouvellement : resp.renouvellement || '',
+    medicaments    : resp.medicaments || [],
+    // Champs imagerie
+    type_examen    : resp.type_examen || '',
+    region         : resp.region || '',
+    conclusions    : resp.conclusions || '',
+    recommandations: resp.recommandations || ''
+  };
+
+  // Injecter imm\u00e9diatement dans allData — visible sans attendre Sheets
+  allData.unshift(newRow);
+  saveScanToHistory(docType === 'analyse' ? 'analyses' : docType === 'ordonnance' ? 'ordonnances' : 'imagerie', resp, dateStr, thumbSrc);
+
+  // Afficher les marqueurs selon le type
+  if (markersEl) {
+    if (docType === 'analyse') {
+      var ml = ['Glyc\u00e9mie', 'Ferritine', 'Cortisol', 'Vitamine D'];
+      for (var i = 0; i < ml.length; i++) {
+        (function(m) {
+          var val = newRow[m];
+          var cfg = MARKERS_CONFIG[m];
+          var status = val ? cfg.getStatus(val) : null;
+          var card = document.createElement('div');
+          card.style.cssText = 'background:var(--white);border-radius:12px;padding:12px;border:1px solid var(--border);';
+          card.innerHTML =
+            '<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:' + (status ? STATUS_COLORS[status.cls] : '#A0A0A0') + ';margin-bottom:6px;">' + m + '</div>' +
+            '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:600;color:var(--text-primary);">' + (val ? parseFloat(val).toLocaleString('fr-FR') : '\u2014') + '</div>' +
+            '<div style="font-size:10px;color:var(--text-muted);">' + cfg.unit + '</div>' +
+            (status ? '<div class="status-badge ' + status.cls + '" style="margin-top:6px"><div class="status-dot ' + status.cls + '"></div>' + status.label + '</div>' : '');
+          markersEl.appendChild(card);
+        })(ml[i]);
+      }
+    } else if (docType === 'ordonnance') {
+      var h = '<div style="grid-column:1/-1">';
+      if (resp.medecin) h += '<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;">\ud83d\udc68\u200d\u2695\ufe0f ' + resp.medecin + (resp.specialite ? ' \u00b7 ' + resp.specialite : '') + '</div>';
+      if (resp.medicaments && resp.medicaments.length) {
+        for (var j = 0; j < resp.medicaments.length; j++) {
+          var med = resp.medicaments[j];
+          h += '<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid var(--green);">' +
+            '<div style="font-size:13px;font-weight:600;">' + (med.nom || '') + (med.dosage ? ' <span style="font-weight:400;color:var(--text-muted);">' + med.dosage + '</span>' : '') + '</div>' +
+            (med.posologie ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">' + med.posologie + '</div>' : '') +
+            (med.duree ? '<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">\u23f1 ' + med.duree + '</div>' : '') +
+            '</div>';
+        }
+      } else {
+        h += '<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px;">Ordonnance enregistr\u00e9e.</div>';
+      }
+      h += '</div>';
+      markersEl.innerHTML = h;
+    } else if (docType === 'imagerie') {
+      var ih = '<div style="grid-column:1/-1">';
+      if (resp.type_examen) ih += '<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid #3B6B9E;"><div style="font-size:11px;font-weight:700;color:#3B6B9E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Examen</div><div style="font-size:13px;font-weight:600;">' + resp.type_examen + '</div>' + (resp.region ? '<div style="font-size:11px;color:var(--text-secondary);">' + resp.region + '</div>' : '') + '</div>';
+      if (resp.conclusions) ih += '<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;"><div style="font-size:11px;font-weight:700;color:#3B6B9E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Conclusions</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">' + resp.conclusions + '</div></div>';
+      if (resp.recommandations) ih += '<div style="background:#EBF2FA;border-radius:10px;padding:12px;border-left:3px solid #3B6B9E;"><div style="font-size:12px;color:#2A4E7A;line-height:1.5;">\ud83d\udccb ' + resp.recommandations + '</div></div>';
+      ih += '</div>';
+      markersEl.innerHTML = ih;
     }
   }
+
+  // Render imm\u00e9diat avec les donn\u00e9es locales inject\u00e9es
+  renderHome();
+  if (docType === 'analyse') renderGraphique();
+
+  // Retries progressifs pour contourner le cache Google Sheets (5s, 15s, 45s)
+  var retries = [5000, 15000, 45000];
+  for (var r = 0; r < retries.length; r++) {
+    (function(delay) {
+      setTimeout(function() {
+        fetchSheetViz(GID_IMPORT, function(err, rows) {
+          if (!err && rows && rows.length > 0) {
+            allData = rows;
+            renderHome();
+            if (docType === 'analyse') renderGraphique();
+            var subs = ['ordonnances', 'analyses', 'imagerie'];
+            for (var s = 0; s < subs.length; s++) {
+              var el = document.getElementById('screen-historique-' + subs[s]);
+              if (el && el.classList.contains('active')) {
+                renderHistoriqueSection(subs[s]);
+                break;
+              }
+            }
+          }
+        });
+      }, delay);
+    })(retries[r]);
+  }
+
   scanShowState('result');
 }
 
