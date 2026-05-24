@@ -780,8 +780,10 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
         <!-- Config webhook -->
         <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
           <div style="font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px">Configuration Make</div>
-          <input type="text" id="scan-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-id" oninput="saveWebhookUrl(this.value)" value="https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2">
-          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5">URL du webhook Make.</div>
+          <input type="text" id="scan-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-scan" oninput="saveWebhookUrl(this.value)" value="https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;margin-bottom:12px;line-height:1.5">Webhook scan Make.</div>
+          <input type="text" id="delete-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-delete" oninput="saveDeleteWebhookUrl(this.value)">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5">Webhook suppression Make.</div>
         </div>
       </div>
 
@@ -879,6 +881,7 @@ var GID_USERS    = 894150190;
 var GID_PROTOCOLES = 1807814537;
 var WEBHOOK_KEY  = 'vitalis_webhook_url';
 var WEBHOOK_DEFAULT = 'https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2';
+var DELETE_WEBHOOK_KEY = 'vitalis_delete_webhook_url';
 
 var currentUser   = null;
 var allData       = [];
@@ -1346,25 +1349,27 @@ function renderHistoriqueSection(section) {
     if (dateKey) sheetsDates[dateKey] = true;
 
     items.push({
-      dateDoc : row.Date || '',
-      resume  : resume,
-      thumb   : row['image_url'] || '',
-      resp    : {
-        'Glyc\u00e9mie'     : row['Glyc\u00e9mie']     || '',
-        'Ferritine'           : row['Ferritine']           || '',
-        'Cortisol'            : row['Cortisol']            || '',
-        'Vitamine D'          : row['Vitamine D']          || '',
-        medecin               : row.medecin                || '',
-        specialite            : row.specialite             || '',
-        notes                 : row.notes                  || '',
-        renouvellement        : row.renouvellement         || '',
-        medicaments           : row.medicaments            || [],
-        type_examen           : row.type_examen            || '',
-        region                : row.region                 || '',
-        conclusions           : row.conclusions            || '',
-        recommandations       : row.recommandations        || ''
-      },
-      fromSheets: true
+      dateDoc    : row.Date || '',
+      resume     : resume,
+      thumb      : row['image_url'] || '',
+      row_id     : row['row_id'] || '',
+      fromSheets : true,
+      resp : {
+        'Glycémie'      : row['Glycémie']      || '',
+        'Ferritine'      : row['Ferritine']      || '',
+        'Cortisol'       : row['Cortisol']       || '',
+        'Vitamine D'     : row['Vitamine D']     || '',
+        medecin          : row.medecin           || '',
+        specialite       : row.specialite        || '',
+        notes            : row.notes             || '',
+        renouvellement   : row.renouvellement    || '',
+        medicaments      : row.medicaments       || [],
+        type_examen      : row.type_examen       || '',
+        region           : row.region            || '',
+        conclusions      : row.conclusions       || '',
+        recommandations  : row.recommandations   || '',
+        row_id           : row['row_id']         || ''
+      }
     });
   }
 
@@ -1401,13 +1406,17 @@ function renderHistoriqueSection(section) {
       var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
       var typeLabel = section === 'ordonnances' ? 'ORDONNANCE' : section === 'analyses' ? 'ANALYSE SANGUINE' : 'IMAGERIE';
 
+      var rowId = item.row_id || (item.resp && item.resp.row_id) || '';
+      var deleteBtn = rowId
+        ? '<button onclick="event.stopPropagation();confirmDelete(\'' + rowId + '\',\'' + section + '\',this)" style="background:none;border:none;cursor:pointer;padding:6px 8px;color:#C0392B;font-size:18px;flex-shrink:0;" title="Supprimer">🗑️</button>'
+        : '';
       el.innerHTML = thumbHtml +
         '<div class="historique-doc-info">' +
           '<div class="historique-doc-type">' + typeLabel + '</div>' +
           '<div class="historique-doc-resume">' + (item.resume || 'Document') + '</div>' +
           '<div class="historique-doc-date">\ud83d\udcc5 ' + dateAffichee + '</div>' +
         '</div>' +
-        '<span class="historique-doc-arrow">\u203a</span>';
+        '<div style="display:flex;align-items:center;gap:4px;">' + deleteBtn + '<span class="historique-doc-arrow">\u203a</span></div>';
       listEl.appendChild(el);
     })(items[k]);
   }
@@ -1452,9 +1461,14 @@ function scanInit(){
   loadScanHistory();
   var saved='';try{saved=localStorage.getItem(WEBHOOK_KEY)||WEBHOOK_DEFAULT;}catch(e){saved=WEBHOOK_DEFAULT;}
   var inp=document.getElementById('scan-webhook-url');if(inp)inp.value=saved||WEBHOOK_DEFAULT;
+  var savedDel='';try{savedDel=localStorage.getItem(DELETE_WEBHOOK_KEY)||'';}catch(e){savedDel='';}
+  var inpDel=document.getElementById('delete-webhook-url');if(inpDel&&savedDel)inpDel.value=savedDel;
 }
 function saveWebhookUrl(val){try{localStorage.setItem(WEBHOOK_KEY,val);}catch(e){}}
 function getWebhookUrl(){var inp=document.getElementById('scan-webhook-url');if(inp&&inp.value.trim())return inp.value.trim();try{return localStorage.getItem(WEBHOOK_KEY)||WEBHOOK_DEFAULT;}catch(e){return WEBHOOK_DEFAULT;}}
+function saveDeleteWebhookUrl(val){try{localStorage.setItem(DELETE_WEBHOOK_KEY,val);}catch(e){}}
+function getDeleteWebhookUrl(){var inp=document.getElementById('delete-webhook-url');if(inp&&inp.value.trim())return inp.value.trim();try{return localStorage.getItem(DELETE_WEBHOOK_KEY)||'';}catch(e){return '';}}
+function generateRowId(){return 'row_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);}
 function scanShowState(state){var states=['idle','loading','result','error'];for(var i=0;i<states.length;i++){var el=document.getElementById('scan-state-'+states[i]);if(el)el.style.display=states[i]===state?'block':'none';}}
 function scanReset(){scanShowState('idle');var types=['analyse','ordonnance','imagerie'];for(var i=0;i<types.length;i++){var inp=document.getElementById('scan-input-'+types[i]);if(inp)inp.value='';}}
 function setLoadingStep(msg){var el=document.getElementById('scan-loading-step');if(el)el.textContent=msg;}
@@ -1547,7 +1561,7 @@ function handleScanSuccess(resp,dateStr,docType){
   var markersEl=document.getElementById('scan-result-markers');if(markersEl)markersEl.innerHTML='';
 
   if(docType==='analyse'){
-    var newRow={email:currentUser?currentUser.email:'',Date:dateStr,'Glycémie':resp['Glycémie']||resp['Glycemie']||'','Ferritine':resp['Ferritine']||resp['ferritine']||'','Cortisol':resp['Cortisol']||resp['cortisol']||'','Vitamine D':resp['Vitamine D']||resp['Vitamine_D']||'','Statut IA':'Analysé','image_url':resp['image_url']||''};
+    var newRow={email:currentUser?currentUser.email:'',Date:dateStr,'Glycémie':resp['Glycémie']||resp['Glycemie']||'','Ferritine':resp['Ferritine']||resp['ferritine']||'','Cortisol':resp['Cortisol']||resp['cortisol']||'','Vitamine D':resp['Vitamine D']||resp['Vitamine_D']||'','Statut IA':'Analysé','image_url':resp['image_url']||'',row_id:resp['row_id']||generateRowId()};
     allData.unshift(newRow);
   // Sauvegarder dans l'historique local
   var thumbImgEl = document.getElementById('scan-thumb-img');
@@ -1560,7 +1574,7 @@ function handleScanSuccess(resp,dateStr,docType){
     var thumbO = document.getElementById('scan-thumb-img');
     saveScanToHistory('ordonnances', resp, dateStr, thumbO ? thumbO.src : '');
     // Sauvegarder dans allData pour sync multi-appareils via Sheets
-    var newRowO={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'ordonnance',medecin:resp.medecin||'',specialite:resp.specialite||'',notes:resp.notes||'',renouvellement:resp.renouvellement||'','Statut IA':'Analysé','image_url':resp['image_url']||''};
+    var newRowO={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'ordonnance',medecin:resp.medecin||'',specialite:resp.specialite||'',notes:resp.notes||'',renouvellement:resp.renouvellement||'','Statut IA':'Analysé','image_url':resp['image_url']||'',row_id:resp['row_id']||generateRowId()};
     allData.unshift(newRowO);
     if(markersEl){
       var h='<div style="grid-column:1/-1">';
@@ -1573,7 +1587,7 @@ function handleScanSuccess(resp,dateStr,docType){
     var thumbI = document.getElementById('scan-thumb-img');
     saveScanToHistory('imagerie', resp, dateStr, thumbI ? thumbI.src : '');
     // Sauvegarder dans allData pour sync multi-appareils via Sheets
-    var newRowI={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'imagerie',type_examen:resp.type_examen||'',region:resp.region||'',conclusions:resp.conclusions||'',recommandations:resp.recommandations||'','Statut IA':'Analysé','image_url':resp['image_url']||''};
+    var newRowI={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'imagerie',type_examen:resp.type_examen||'',region:resp.region||'',conclusions:resp.conclusions||'',recommandations:resp.recommandations||'','Statut IA':'Analysé','image_url':resp['image_url']||'',row_id:resp['row_id']||generateRowId()};
     allData.unshift(newRowI);
     if(markersEl){
       var ih='<div style="grid-column:1/-1">';
@@ -1780,10 +1794,42 @@ function openProtocoleDetail(marker) {
   if (detailEl) detailEl.classList.add('active');
 }
 
-function closeProtocoleDetail() {
-  var detailEl = document.getElementById('screen-protocole-detail');
-  if (detailEl) detailEl.classList.remove('active');
-  navigate('analyses');
+function confirmDelete(rowId, section, btnEl) {
+  // Remplace le bouton par une confirmation inline
+  var parent = btnEl.parentNode;
+  parent.innerHTML =
+    '<span style="font-size:11px;color:#C0392B;font-weight:600;">Effacer ?</span>' +
+    '<button onclick="event.stopPropagation();deleteDocument(\'' + rowId + '\',\'' + section + '\',this)" style="background:#C0392B;color:white;border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;margin-left:4px;">Oui</button>' +
+    '<button onclick="event.stopPropagation();renderHistoriqueSection(\'' + section + '\')" style="background:var(--border);color:var(--text-primary);border:none;border-radius:6px;padding:4px 8px;font-size:11px;cursor:pointer;margin-left:3px;">Non</button>';
+}
+
+function deleteDocument(rowId, section, btnEl) {
+  var webhookUrl = getDeleteWebhookUrl();
+  if (!webhookUrl) {
+    alert('⚠️ Configurez d\'abord l\'URL du webhook de suppression dans l\'onglet Scanner.');
+    return;
+  }
+  if (btnEl) { btnEl.disabled = true; btnEl.textContent = '…'; }
+
+  var email = currentUser ? currentUser.email : '';
+  var payload = JSON.stringify({ action: 'delete', row_id: rowId, email: email, section: section });
+
+  fetch(webhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload
+  })
+  .then(function(r) {
+    // Supprimer de allData en local immédiatement
+    allData = allData.filter(function(row) { return row['row_id'] !== rowId; });
+    renderHistoriqueSection(section);
+    if (section === 'analyses') { renderHome(); renderGraphique(); }
+  })
+  .catch(function(err) {
+    // Même en cas d'erreur réseau, supprimer localement
+    allData = allData.filter(function(row) { return row['row_id'] !== rowId; });
+    renderHistoriqueSection(section);
+  });
 }
 
 </script>
