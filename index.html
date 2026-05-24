@@ -782,7 +782,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
           <div style="font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px">Configuration Make</div>
           <input type="text" id="scan-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-scan" oninput="saveWebhookUrl(this.value)" value="https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2">
           <div style="font-size:11px;color:var(--text-muted);margin-top:6px;margin-bottom:12px;line-height:1.5">Webhook scan Make.</div>
-          <input type="text" id="delete-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-delete" oninput="saveDeleteWebhookUrl(this.value)">
+          <input type="text" id="delete-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-delete" oninput="saveDeleteWebhookUrl(this.value)" value="https://hook.eu1.make.com/vhscoq9msxb2hipwtatenpsifvv87siw">
           <div style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5">Webhook suppression Make.</div>
         </div>
       </div>
@@ -882,6 +882,7 @@ var GID_PROTOCOLES = 1807814537;
 var WEBHOOK_KEY  = 'vitalis_webhook_url';
 var WEBHOOK_DEFAULT = 'https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2';
 var DELETE_WEBHOOK_KEY = 'vitalis_delete_webhook_url';
+var DELETE_WEBHOOK_DEFAULT = 'https://hook.eu1.make.com/vhscoq9msxb2hipwtatenpsifvv87siw';
 
 var currentUser   = null;
 var allData       = [];
@@ -1467,7 +1468,7 @@ function scanInit(){
 function saveWebhookUrl(val){try{localStorage.setItem(WEBHOOK_KEY,val);}catch(e){}}
 function getWebhookUrl(){var inp=document.getElementById('scan-webhook-url');if(inp&&inp.value.trim())return inp.value.trim();try{return localStorage.getItem(WEBHOOK_KEY)||WEBHOOK_DEFAULT;}catch(e){return WEBHOOK_DEFAULT;}}
 function saveDeleteWebhookUrl(val){try{localStorage.setItem(DELETE_WEBHOOK_KEY,val);}catch(e){}}
-function getDeleteWebhookUrl(){var inp=document.getElementById('delete-webhook-url');if(inp&&inp.value.trim())return inp.value.trim();try{return localStorage.getItem(DELETE_WEBHOOK_KEY)||'';}catch(e){return '';}}
+function getDeleteWebhookUrl(){var inp=document.getElementById('delete-webhook-url');if(inp&&inp.value.trim())return inp.value.trim();try{return localStorage.getItem(DELETE_WEBHOOK_KEY)||DELETE_WEBHOOK_DEFAULT;}catch(e){return DELETE_WEBHOOK_DEFAULT;}}
 function generateRowId(){return 'row_'+Date.now()+'_'+Math.random().toString(36).substr(2,9);}
 function scanShowState(state){var states=['idle','loading','result','error'];for(var i=0;i<states.length;i++){var el=document.getElementById('scan-state-'+states[i]);if(el)el.style.display=states[i]===state?'block':'none';}}
 function scanReset(){scanShowState('idle');var types=['analyse','ordonnance','imagerie'];for(var i=0;i<types.length;i++){var inp=document.getElementById('scan-input-'+types[i]);if(inp)inp.value='';}}
