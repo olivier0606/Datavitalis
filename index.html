@@ -1523,6 +1523,7 @@ function handleScanDirect(input,type){
 function sendToMakeWebhook(webhookUrl,base64,mimeType,filename,docType){
   var email=currentUser?(currentUser.email||''):'';
   var today=new Date();
+  var dateStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
   var prompt=SCAN_PROMPTS[docType]||SCAN_PROMPTS.analyse;
   var rowId=generateRowId();
   var payload=JSON.stringify({image_base64:base64,mime_type:mimeType,filename:filename,email:email,date:dateStr,source:'vitalis_app',doc_type:docType,prompt:prompt,row_id:rowId});
