@@ -1368,12 +1368,8 @@ function renderHistoriqueSection(section) {
     });
   }
 
-  // 2. localStorage — uniquement si absent de Sheets
-  var localItems = scanHistory[section] || [];
-  for (var j = 0; j < localItems.length; j++) {
-    var localDate = (localItems[j].date || localItems[j].dateDoc || '').substring(0, 10);
-    if (!sheetsDates[localDate]) items.push(localItems[j]);
-  }
+  // localStorage désactivé — Sheets est la seule source de vérité
+  // Les anciens scans locaux ne sont plus affichés
 
   // 3. Tri par date d\u00e9croissante
   items.sort(function(a, b) {
