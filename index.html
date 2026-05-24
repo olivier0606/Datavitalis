@@ -980,7 +980,19 @@ function refreshFromNetwork() {
         if (!e2 && r2 && r2.length > 0) allData = r2;
         fetchSheetViz(GID_PROTOCOLES, function(e3, r3) {
           if (!e3 && r3 && r3.length > 0) protocoleData = r3;
-          if (currentUser) { renderHome(); renderHistorique(); }
+          if (currentUser) {
+            renderHome();
+            renderGraphique();
+            // Re-render historique si un sous-écran est actif
+            var subs = ['ordonnances','analyses','imagerie'];
+            for (var i = 0; i < subs.length; i++) {
+              var el = document.getElementById('screen-historique-' + subs[i]);
+              if (el && el.classList.contains('active')) {
+                renderHistoriqueSection(subs[i]);
+                break;
+              }
+            }
+          }
         });
       });
     }
@@ -1570,7 +1582,12 @@ function handleScanSuccess(resp,dateStr,docType){
   var thumbSrc = thumbImgEl ? thumbImgEl.src : '';
   saveScanToHistory('analyses', resp, dateStr, thumbSrc);
     if(markersEl){var ml=['Glycémie','Ferritine','Cortisol','Vitamine D'];for(var i=0;i<ml.length;i++){(function(m){var val=newRow[m];var cfg=MARKERS_CONFIG[m];var status=val?cfg.getStatus(val):null;var card=document.createElement('div');card.style.cssText='background:var(--white);border-radius:12px;padding:12px;border:1px solid var(--border);';card.innerHTML='<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:'+(status?STATUS_COLORS[status.cls]:'#A0A0A0')+';margin-bottom:6px;">'+m+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:600;color:var(--text-primary);">'+(val?parseFloat(val).toLocaleString('fr-FR'):'—')+'</div><div style="font-size:10px;color:var(--text-muted);">'+cfg.unit+'</div>'+(status?'<div class="status-badge '+status.cls+'" style="margin-top:6px"><div class="status-dot '+status.cls+'"></div>'+status.label+'</div>':'');markersEl.appendChild(card);})(ml[i]);}}
-    setTimeout(function(){renderHome();renderGraphique();},300);
+    setTimeout(function(){
+      renderHome();
+      renderGraphique();
+      // Refresh depuis Sheets pour que l'historique soit à jour immédiatement
+      refreshFromNetwork();
+    },300);
 
   } else if(docType==='ordonnance'){
     var thumbO = document.getElementById('scan-thumb-img');
@@ -1578,6 +1595,7 @@ function handleScanSuccess(resp,dateStr,docType){
     // Sauvegarder dans allData pour sync multi-appareils via Sheets
     var newRowO={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'ordonnance',medecin:resp.medecin||'',specialite:resp.specialite||'',notes:resp.notes||'',renouvellement:resp.renouvellement||'','Statut IA':'Analysé','image_url':resp['image_url']||'',row_id:resp['row_id']||generateRowId()};
     allData.unshift(newRowO);
+    setTimeout(function(){ refreshFromNetwork(); }, 1500);
     if(markersEl){
       var h='<div style="grid-column:1/-1">';
       if(resp.medecin)h+='<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;">👨‍⚕️ '+resp.medecin+(resp.specialite?' · '+resp.specialite:'')+'</div>';
@@ -1591,6 +1609,7 @@ function handleScanSuccess(resp,dateStr,docType){
     // Sauvegarder dans allData pour sync multi-appareils via Sheets
     var newRowI={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'imagerie',type_examen:resp.type_examen||'',region:resp.region||'',conclusions:resp.conclusions||'',recommandations:resp.recommandations||'','Statut IA':'Analysé','image_url':resp['image_url']||'',row_id:resp['row_id']||generateRowId()};
     allData.unshift(newRowI);
+    setTimeout(function(){ refreshFromNetwork(); }, 1500);
     if(markersEl){
       var ih='<div style="grid-column:1/-1">';
       if(resp.type_examen)ih+='<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid #3B6B9E;"><div style="font-size:11px;font-weight:700;color:#3B6B9E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Examen</div><div style="font-size:13px;font-weight:600;">'+resp.type_examen+'</div>'+(resp.region?'<div style="font-size:11px;color:var(--text-secondary);">'+resp.region+'</div>':'')+'</div>';
