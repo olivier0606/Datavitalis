@@ -909,23 +909,21 @@ var STATUS_COLORS={optimal:'#2A9D6E',warning:'#D4A017',danger:'#C0392B',orange:'
 function parseCSV(text){var lines=text.trim().split('\n');if(lines.length<2)return[];var headers=parseCSVLine(lines[0]);var result=[];for(var i=1;i<lines.length;i++){var vals=parseCSVLine(lines[i]);var obj={};for(var j=0;j<headers.length;j++)obj[headers[j].trim()]=(vals[j]||'').trim();var ok=false;for(var k in obj)if(obj[k]){ok=true;break;}if(ok)result.push(obj);}return result;}
 function parseCSVLine(line){var result=[],current='',inQ=false;for(var i=0;i<line.length;i++){var ch=line[i];if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){result.push(current);current='';}else current+=ch;}result.push(current);return result;}
 
-// ── GOOGLE VIZ API (JSONP)
-function fetchSheetViz(gid,callback){
-  var cbName='_vcb'+gid+'_'+Date.now();
-  var done=false;
-  var timer=setTimeout(function(){if(done)return;done=true;window[cbName]=function(){};var s=document.getElementById('vs'+gid);if(s&&s.parentNode)s.parentNode.removeChild(s);callback(new Error('timeout'),null);},10000);
-  window[cbName]=function(resp){
-    if(done)return;done=true;clearTimeout(timer);
-    var s=document.getElementById('vs'+gid);if(s&&s.parentNode)s.parentNode.removeChild(s);
-    try{var table=resp.table;if(!table||!table.cols||!table.rows){callback(null,[]);return;}
-    var headers=[];for(var h=0;h<table.cols.length;h++)headers.push((table.cols[h].label||'').trim());
-    var rows=[];for(var r=0;r<table.rows.length;r++){var rd=table.rows[r];var obj={};for(var c=0;c<headers.length;c++){var cell=rd.c?rd.c[c]:null;var val='';if(cell){if(cell.f!==null&&cell.f!==undefined&&cell.f!=='')val=cell.f+'';else if(cell.v!==null&&cell.v!==undefined)val=cell.v+'';}obj[headers[c]]=val;}rows.push(obj);}
-    callback(null,rows);}catch(e){callback(e,null);}
-  };
-  var s=document.createElement('script');s.id='vs'+gid;
-  s.src='https://docs.google.com/spreadsheets/d/e/'+SHEET_ID+'/gviz/tq?tqx=out:json&tq=&gid='+gid+'&callback='+cbName;
-  s.onerror=function(){if(done)return;done=true;clearTimeout(timer);var sc=document.getElementById('vs'+gid);if(sc&&sc.parentNode)sc.parentNode.removeChild(sc);callback(new Error('script error'),null);};
-  document.head.appendChild(s);
+// ── CSV FETCH (remplace gviz qui retourne 404)
+function fetchSheetViz(gid, callback) {
+  var url = 'https://docs.google.com/spreadsheets/d/e/' + SHEET_ID + '/pub?output=csv&gid=' + gid;
+  fetch(url)
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    })
+    .then(function(text) {
+      var rows = parseCSV(text);
+      callback(null, rows);
+    })
+    .catch(function(err) {
+      callback(err, null);
+    });
 }
 
 // ── LOAD ALL DATA
@@ -938,14 +936,17 @@ function loadAllData(onComplete) {
   var sheetsLoaded = false;
   var timedOut = false;
 
-  // Fallback : si Sheets ne répond pas en 8s → erreur claire
+  // Fallback : si Sheets ne répond pas en 12s → login possible avec users embarqués
   var fallbackTimer = setTimeout(function() {
     if (sheetsLoaded) return;
     timedOut = true;
+    if (!userData || userData.length === 0) userData = getDemoUsers();
+    allData = [];
     dataLoaded = true;
     if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Accéder à mon espace'; }
-    if (loginErr) loginErr.textContent = '⚠️ Connexion aux données impossible. Vérifiez votre réseau et réessayez.';
-  }, 8000);
+    if (loginErr) loginErr.textContent = '⚠️ Données non chargées — vérifiez votre réseau.';
+    onComplete();
+  }, 12000);
 
   // Chargement depuis Sheets (source principale)
   fetchSheetViz(GID_USERS, function(err, rows) {
@@ -984,8 +985,9 @@ function refreshFromNetwork() {
 
 
 // ── DEMO DATA
-function getDemoUsers(){return[];}
+function getDemoUsers(){return[{email:'n.steinfels@hotmail.com','Prénom':'Nathalie',Nom:'Steinfels',Photo:'https://drive.google.com/file/d/101zHEIy1jeT1oJ1FBTAOnd2V2GI7LA-M/view?usp=drive_link','Date de naissance':'',Poids:''},{email:'o.steinfels@orange.fr','Prénom':'Olivier',Nom:'Steinfels',Photo:'','Date de naissance':'',Poids:''}];}
 function getDemoImportData(){return[];}
+
 function getDemoProtocoles(){return[
   {Titre:'Régulation de la glycémie',Description:'Limiter les sucres rapides, privilégier des repas à index glycémique bas. Intégrer la cannelle de Ceylan et le chrome.','Catégorie':'Glycémie',Icone:'🥗'},
   {Titre:'Supplémentation Vitamine D',Description:'Cure de vitamine D3 + K2 en association avec des corps gras au repas. Objectif : 50-70 ng/mL.','Catégorie':'Vitamine D',Icone:'☀️'},
@@ -1397,7 +1399,7 @@ function renderHistoriqueSection(section) {
 
       var icon = section === 'ordonnances' ? '\ud83d\udcc4' : section === 'analyses' ? '\ud83e\udeb8' : '\ud83e\udeab';
       var thumbHtml = item.thumb
-        ? '<div class="historique-doc-thumb"><img src="' + item.thumb + '" alt="scan" onerror="this.parentNode.innerHTML='<span style=\\"font-size:24px;\\">' + icon + '</span>'"></div>'
+        ? '<div class="historique-doc-thumb" style="overflow:hidden"><img src="' + item.thumb + '" alt="scan"></div>'
         : '<div class="historique-doc-thumb" style="display:flex;align-items:center;justify-content:center;font-size:24px;">' + icon + '</div>';
 
       var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
@@ -1788,7 +1790,6 @@ function closeProtocoleDetail() {
   navigate('analyses');
 }
 
--e 
 </script>
 </body>
 </html>
