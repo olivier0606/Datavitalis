@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Vitalis Data</title>
+<title>Data Vitalis</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -316,7 +316,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
         <ellipse cx="100" cy="28" rx="8" ry="12" fill="#E8521A" opacity=".15" transform="rotate(-12 100 28)"/>
         <line x1="0" y1="35" x2="120" y2="35" stroke="#E8521A" stroke-width="1" opacity=".2"/>
       </svg>
-      <div class="login-logo-title">Vitalis Data</div>
+      <div class="login-logo-title">Data Vitalis</div>
       <div class="login-logo-sub">Stratégie de longévité</div>
     </div>
     <label class="login-label">Adresse email</label>
@@ -341,7 +341,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
 <div id="screen-accueil" class="screen">
   <div class="top-header">
     <button class="header-menu-btn" onclick="showMenu()"><div class="menu-line"></div><div class="menu-line" style="width:20px"></div><div class="menu-line" style="width:16px"></div></button>
-    <span class="header-title">Vitalis Data</span>
+    <span class="header-title">Data Vitalis</span>
     <div class="header-right"><div class="header-notif"><span style="font-size:16px">🔔</span></div></div>
   </div>
   <div class="scroll-content">
@@ -416,7 +416,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
     <div class="analyses-header-card">
       <div class="profile-row-sm">
         <div class="profile-avatar-sm" id="analyses-avatar"></div>
-        <div><div class="profile-name-sm" id="analyses-name">—</div><div class="profile-sub-sm">Statut Longévité · by Vitalis Data</div></div>
+        <div><div class="profile-name-sm" id="analyses-name">—</div><div class="profile-sub-sm">Statut Longévité · by Data Vitalis</div></div>
       </div>
     </div>
     <div class="marker-tabs" id="analyses-tabs">
@@ -777,13 +777,10 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
         <input type="file" id="scan-input-ordonnance" class="scan-file-input" accept="image/*" capture="environment" onchange="handleScanDirect(this,'ordonnance')">
         <input type="file" id="scan-input-imagerie"   class="scan-file-input" accept="image/*" capture="environment" onchange="handleScanDirect(this,'imagerie')">
 
-        <!-- Config webhook -->
-        <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
-          <div style="font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px">Configuration Make</div>
-          <input type="text" id="scan-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-scan" oninput="saveWebhookUrl(this.value)" value="https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2">
-          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;margin-bottom:12px;line-height:1.5">Webhook scan Make.</div>
-          <input type="text" id="delete-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-delete" oninput="saveDeleteWebhookUrl(this.value)" value="https://hook.eu1.make.com/vhscoq9msxb2hipwtatenpsifvv87siw">
-          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5">Webhook suppression Make.</div>
+        <!-- Config webhook (masquée) -->
+        <div style="display:none">
+          <input type="text" id="scan-webhook-url" oninput="saveWebhookUrl(this.value)" value="https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2">
+          <input type="text" id="delete-webhook-url" oninput="saveDeleteWebhookUrl(this.value)" value="https://hook.eu1.make.com/vhscoq9msxb2hipwtatenpsifvv87siw">
         </div>
       </div>
 
@@ -860,7 +857,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
       <div class="contact-coach-card">
         <div style="width:88px;height:88px;border-radius:50%;background:var(--orange-light);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:var(--orange)">V</div>
         <div class="contact-name">Votre Case Manager</div>
-        <div class="contact-role">Vitalis Data · Stratégie de Longévité</div>
+        <div class="contact-role">Data Vitalis · Stratégie de Longévité</div>
         <div class="contact-tagline">"Ensemble, nous affinons votre stratégie de vitalité pour une santé optimale sur le long terme."</div>
       </div>
       <div class="contact-actions">
