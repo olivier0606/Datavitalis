@@ -172,7 +172,7 @@ body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary)
 .protocole-menu-obj{font-size:11px;color:var(--text-muted);line-height:1.4}
 .protocole-menu-arrow{font-size:20px;color:var(--text-muted);font-weight:300}
 /* Page détail thématique */
-.protocole-theme-screen{display:none;flex-direction:column;min-height:100vh;padding-bottom:calc(var(--nav-height)+16px);animation:fadeIn .25s ease}
+.protocole-theme-screen{display:none;flex-direction:column;min-height:100vh;padding-bottom:calc(var(--nav-height)+16px);animation:fadeIn .25s ease;position:fixed;top:0;left:0;right:0;bottom:0;z-index:50;background:var(--bg);overflow-y:auto}
 .protocole-theme-screen.active{display:flex}
 .protocole-theme-header{position:relative;height:200px;overflow:hidden;flex-shrink:0}
 .protocole-theme-header img{width:100%;height:100%;object-fit:cover;display:block}
@@ -1011,18 +1011,163 @@ document.getElementById('login-email').addEventListener('keydown',function(e){if
 // ── NAVIGATION
 var SCREENS=['accueil','analyses','protocole','graphique','historique','scanner','contact','protocole-detail'];
 var NAV_IDS=['accueil','scanner','analyses','protocole','historique','graphique'];
-function navigate(screen){
-  // Fermer tous les sous-écrans historique avant de naviguer
-  var subs=['ordonnances','analyses','imagerie','detail','detail-ordonnance','detail-imagerie'];
-  for(var s=0;s<subs.length;s++){var sub=document.getElementById('screen-historique-'+subs[s]);if(sub)sub.classList.remove('active');}
-  for(var i=0;i<SCREENS.length;i++){var el=document.getElementById('screen-'+SCREENS[i]);if(el)el.classList[SCREENS[i]===screen?'add':'remove']('active');}
-  for(var j=0;j<NAV_IDS.length;j++){var btn=document.getElementById('nav-'+NAV_IDS[j]);if(btn)btn.classList[NAV_IDS[j]===screen?'add':'remove']('active');}
-  if(screen==='accueil')renderHome();
-  if(screen==='analyses')renderAnalyses();
-  if(screen==='protocole')renderProtocole();
-  if(screen==='graphique')renderGraphique();
-  if(screen==='historique')renderHistorique();
+// ── NAVIGATION SYSTEM ─────────────────────────────────────────────────────────
+var SCREENS        = ['accueil','analyses','protocole','graphique','historique','scanner','contact','protocole-detail'];
+var NAV_IDS        = ['accueil','scanner','analyses','protocole','historique','graphique'];
+var HISTO_SUBS     = ['ordonnances','analyses','imagerie'];
+var HISTO_DETAILS  = ['detail','detail-ordonnance','detail-imagerie'];
+var PROTO_SLUGS    = ['nutrition','sommeil','activite','stress','cardio','jeune'];
+
+// Ferme TOUT ce qui peut être ouvert (sous-écrans inclus)
+function closeAll() {
+  // Écrans principaux
+  for (var i = 0; i < SCREENS.length; i++) {
+    var el = document.getElementById('screen-' + SCREENS[i]);
+    if (el) el.classList.remove('active');
+  }
+  // Sous-écrans historique (listes)
+  for (var j = 0; j < HISTO_SUBS.length; j++) {
+    var hs = document.getElementById('screen-historique-' + HISTO_SUBS[j]);
+    if (hs) hs.classList.remove('active');
+  }
+  // Sous-écrans historique (détails)
+  for (var k = 0; k < HISTO_DETAILS.length; k++) {
+    var hd = document.getElementById('screen-historique-' + HISTO_DETAILS[k]);
+    if (hd) hd.classList.remove('active');
+  }
+  // Sous-écrans protocole
+  for (var p = 0; p < PROTO_SLUGS.length; p++) {
+    var pt = document.getElementById('screen-protocole-' + PROTO_SLUGS[p]);
+    if (pt) pt.classList.remove('active');
+  }
+  // Nav items
+  var navBtns = document.querySelectorAll('.nav-item');
+  for (var n = 0; n < navBtns.length; n++) navBtns[n].classList.remove('active');
 }
+
+// Navigation principale
+function navigate(screen) {
+  if (!screen) return;
+  closeAll();
+  var target = document.getElementById('screen-' + screen);
+  if (target) target.classList.add('active');
+  // Nav active (map screen → nav id)
+  var navMap = {'accueil':'accueil','analyses':'analyses','protocole':'protocole','protocole-detail':'protocole','graphique':'graphique','historique':'historique','scanner':'scanner','contact':null};
+  var navId = (navMap[screen] !== undefined) ? navMap[screen] : screen;
+  if (navId) { var nb = document.getElementById('nav-' + navId); if (nb) nb.classList.add('active'); }
+  // Render hooks
+  if (screen === 'accueil')    renderHome();
+  if (screen === 'analyses')   renderAnalyses();
+  if (screen === 'protocole')  renderProtocole();
+  if (screen === 'graphique')  renderGraphique();
+  if (screen === 'historique') renderHistorique();
+  // Scroll top
+  if (target) target.scrollTop = 0;
+}
+
+// ── HISTORIQUE ──
+function openHistoriqueSection(section) {
+  closeAll();
+  var target = document.getElementById('screen-historique-' + section);
+  if (target) { target.classList.add('active'); target.scrollTop = 0; }
+  var navH = document.getElementById('nav-historique');
+  if (navH) navH.classList.add('active');
+  renderHistoriqueSection(section);
+}
+
+function closeHistoriqueSection() { navigate('historique'); }
+
+function openDetailAnalyse(item) {
+  closeAll();
+  var detailScreen = document.getElementById('screen-historique-detail');
+  if (detailScreen) { detailScreen.classList.add('active'); detailScreen.scrollTop = 0; }
+  var navH = document.getElementById('nav-historique');
+  if (navH) navH.classList.add('active');
+  var content = document.getElementById('detail-analyse-content');
+  if (!content) return;
+  var resp = item.resp || {};
+  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
+  var markers = ['Glycémie','Ferritine','Cortisol','Vitamine D'];
+  var markersHtml = '';
+  for (var i = 0; i < markers.length; i++) {
+    var m = markers[i];
+    var val = resp[m] || resp[m.replace(' ','_')] || null;
+    var cfg = MARKERS_CONFIG[m];
+    var status = val && cfg ? cfg.getStatus(val) : null;
+    var color = status ? STATUS_COLORS[status.cls] : '#A0A0A0';
+    markersHtml += '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">' +
+      '<div>' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:' + color + ';margin-bottom:4px;">' + m + '</div>' +
+        '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-weight:600;color:var(--text-primary);">' + (val ? parseFloat(val).toLocaleString('fr-FR') : '—') + '</div>' +
+        (cfg ? '<div style="font-size:11px;color:var(--text-muted);">' + cfg.unit + '</div>' : '') +
+      '</div>' +
+      (status ? '<div class="status-badge ' + status.cls + '"><div class="status-dot ' + status.cls + '"></div>' + status.label + '</div>' : '') +
+    '</div>';
+  }
+  var thumbHtml = item.thumb
+    ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);"><img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Scan analyse"></div>'
+    : '';
+  content.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' + thumbHtml + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' + markersHtml + '</div>';
+}
+
+function closeDetailAnalyse() { openHistoriqueSection('analyses'); }
+
+function openDetailOrdonnance(item) {
+  closeAll();
+  var detailScreen = document.getElementById('screen-historique-detail-ordonnance');
+  if (detailScreen) { detailScreen.classList.add('active'); detailScreen.scrollTop = 0; }
+  var navH = document.getElementById('nav-historique');
+  if (navH) navH.classList.add('active');
+  var content = document.getElementById('detail-ordonnance-content');
+  if (!content) return;
+  var resp = item.resp || {};
+  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
+  var thumbHtml = item.thumb ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);"><img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Ordonnance"></div>' : '';
+  var medecinHtml = (resp.medecin || resp.specialite)
+    ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:12px;"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">MÉDECIN</div><div style="font-size:15px;font-weight:600;color:var(--text-primary);">👨‍⚕️ ' + (resp.medecin || '') + '</div>' + (resp.specialite ? '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">' + resp.specialite + '</div>' : '') + '</div>' : '';
+  var medsHtml = '';
+  if (resp.medicaments && resp.medicaments.length) {
+    for (var mi = 0; mi < resp.medicaments.length; mi++) {
+      var med = resp.medicaments[mi];
+      medsHtml += '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);border-left:3px solid var(--green);margin-bottom:10px;"><div style="font-size:13px;font-weight:600;color:var(--text-primary);">' + (med.nom || '') + (med.dosage ? ' <span style="font-weight:400;color:var(--text-muted);">' + med.dosage + '</span>' : '') + '</div>' + (med.posologie ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">⏱ ' + med.posologie + '</div>' : '') + (med.duree ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">📅 ' + med.duree + '</div>' : '') + '</div>';
+    }
+  } else { medsHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Ordonnance enregistrée</div>'; }
+  var notesHtml = resp.notes ? '<div style="background:#FDF8EC;border-radius:14px;padding:14px 16px;border-left:3px solid var(--yellow);margin-top:4px;font-size:12px;color:var(--text-secondary);line-height:1.5;">📋 ' + resp.notes + '</div>' : '';
+  content.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' + thumbHtml + medecinHtml + medsHtml + notesHtml;
+}
+
+function closeDetailOrdonnance() { openHistoriqueSection('ordonnances'); }
+
+function openDetailImagerie(item) {
+  closeAll();
+  var detailScreen = document.getElementById('screen-historique-detail-imagerie');
+  if (detailScreen) { detailScreen.classList.add('active'); detailScreen.scrollTop = 0; }
+  var navH = document.getElementById('nav-historique');
+  if (navH) navH.classList.add('active');
+  var content = document.getElementById('detail-imagerie-content');
+  if (!content) return;
+  var resp = item.resp || {};
+  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
+  var thumbHtml = item.thumb ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);"><img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Imagerie"></div>' : '';
+  var examHtml = resp.type_examen ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);border-left:3px solid #3B6B9E;margin-bottom:10px;"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#3B6B9E;margin-bottom:6px;">EXAMEN</div><div style="font-size:15px;font-weight:600;color:var(--text-primary);">🫁 ' + resp.type_examen + '</div>' + (resp.region ? '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">' + resp.region + '</div>' : '') + '</div>' : '';
+  var conclusionsHtml = resp.conclusions ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:10px;"><div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#3B6B9E;margin-bottom:6px;">CONCLUSIONS</div><div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">' + resp.conclusions + '</div></div>' : '';
+  var recoHtml = resp.recommandations ? '<div style="background:#EBF2FA;border-radius:14px;padding:14px 16px;border-left:3px solid #3B6B9E;"><div style="font-size:12px;color:#2A4E7A;line-height:1.5;">📋 ' + resp.recommandations + '</div></div>' : '';
+  content.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' + thumbHtml + examHtml + conclusionsHtml + recoHtml;
+}
+
+function closeDetailImagerie() { openHistoriqueSection('imagerie'); }
+
+// ── PROTOCOLE ──
+function openProtocoleTheme(slug) {
+  if (PROTO_SLUGS.indexOf(slug) === -1) return;
+  closeAll();
+  var target = document.getElementById('screen-protocole-' + slug);
+  if (target) { target.classList.add('active'); target.scrollTop = 0; }
+  var navP = document.getElementById('nav-protocole');
+  if (navP) navP.classList.add('active');
+}
+
+function closeProtocoleTheme() { navigate('protocole'); }
 function showMenu(){if(confirm('Déconnexion ?')){currentUser=null;dataLoaded=false;userData=[];allData=[];protocoleData=[];document.getElementById('bottom-nav').style.display='none';for(var i=0;i<SCREENS.length;i++){var el=document.getElementById('screen-'+SCREENS[i]);if(el)el.classList.remove('active');}var lg2=document.getElementById('screen-login');lg2.style.display='';lg2.classList.add('active');document.getElementById('login-btn').textContent='Accéder à mon espace';document.getElementById('login-email').value='';document.getElementById('login-error').textContent='';}}
 
 // ── HELPERS
@@ -1146,156 +1291,6 @@ function loadScanHistory() {
   } catch(e) {}
 }
 
-function openHistoriqueSection(section) {
-  // Masquer tous les screens normaux
-  for (var i = 0; i < SCREENS.length; i++) {
-    var el = document.getElementById('screen-' + SCREENS[i]);
-    if (el) el.classList.remove('active');
-  }
-  // Masquer autres sous-sections
-  var subs = ['ordonnances', 'analyses', 'imagerie'];
-  for (var j = 0; j < subs.length; j++) {
-    var s = document.getElementById('screen-historique-' + subs[j]);
-    if (s) s.classList.remove('active');
-  }
-  var target = document.getElementById('screen-historique-' + section);
-  if (target) target.classList.add('active');
-  // Garder nav historique active
-  for (var k = 0; k < document.querySelectorAll('.nav-item').length; k++) {}
-  var navH = document.getElementById('nav-historique');
-  if (navH) navH.classList.add('active');
-  renderHistoriqueSection(section);
-}
-
-function closeHistoriqueSection() {
-  var subs = ['ordonnances', 'analyses', 'imagerie'];
-  for (var j = 0; j < subs.length; j++) {
-    var s = document.getElementById('screen-historique-' + subs[j]);
-    if (s) s.classList.remove('active');
-  }
-  navigate('historique');
-}
-
-function openDetailAnalyse(item) {
-  // Masquer la liste analyses
-  var listScreen = document.getElementById('screen-historique-analyses');
-  if (listScreen) listScreen.classList.remove('active');
-  // Afficher la page détail
-  var detailScreen = document.getElementById('screen-historique-detail');
-  if (detailScreen) detailScreen.classList.add('active');
-  // Remplir le contenu
-  var content = document.getElementById('detail-analyse-content');
-  if (!content) return;
-  var resp = item.resp || {};
-  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
-  var markers = ['Glycémie','Ferritine','Cortisol','Vitamine D'];
-  var markersHtml = '';
-  for (var i = 0; i < markers.length; i++) {
-    var m = markers[i];
-    var val = resp[m] || resp[m.replace(' ','_')] || null;
-    var cfg = MARKERS_CONFIG[m];
-    var status = val && cfg ? cfg.getStatus(val) : null;
-    var color = status ? STATUS_COLORS[status.cls] : '#A0A0A0';
-    markersHtml += '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">' +
-      '<div>' +
-        '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:' + color + ';margin-bottom:4px;">' + m + '</div>' +
-        '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-weight:600;color:var(--text-primary);">' + (val ? parseFloat(val).toLocaleString('fr-FR') : '—') + '</div>' +
-        (cfg ? '<div style="font-size:11px;color:var(--text-muted);">' + cfg.unit + '</div>' : '') +
-      '</div>' +
-      (status ? '<div class="status-badge ' + status.cls + '"><div class="status-dot ' + status.cls + '"></div>' + status.label + '</div>' : '') +
-    '</div>';
-  }
-  var thumbHtml = item.thumb
-    ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);">' +
-      '<img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Scan analyse"></div>'
-    : '';
-  content.innerHTML =
-    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' +
-    thumbHtml +
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' + markersHtml + '</div>';
-}
-
-function closeDetailAnalyse() {
-  var detailScreen = document.getElementById('screen-historique-detail');
-  if (detailScreen) detailScreen.classList.remove('active');
-  openHistoriqueSection('analyses');
-}
-
-function openDetailOrdonnance(item) {
-  var listScreen = document.getElementById('screen-historique-ordonnances');
-  if (listScreen) listScreen.classList.remove('active');
-  var detailScreen = document.getElementById('screen-historique-detail-ordonnance');
-  if (detailScreen) detailScreen.classList.add('active');
-  var content = document.getElementById('detail-ordonnance-content');
-  if (!content) return;
-  var resp = item.resp || {};
-  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
-  var thumbHtml = item.thumb
-    ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);"><img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Ordonnance"></div>'
-    : '';
-  var medecinHtml = (resp.medecin || resp.specialite)
-    ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:12px;">' +
-      '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">MÉDECIN</div>' +
-      '<div style="font-size:15px;font-weight:600;color:var(--text-primary);">👨‍⚕️ ' + (resp.medecin || '') + '</div>' +
-      (resp.specialite ? '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">' + resp.specialite + '</div>' : '') +
-      '</div>' : '';
-  var medsHtml = '';
-  if (resp.medicaments && resp.medicaments.length) {
-    for (var i = 0; i < resp.medicaments.length; i++) {
-      var med = resp.medicaments[i];
-      medsHtml += '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);border-left:3px solid var(--green);margin-bottom:10px;">' +
-        '<div style="font-size:13px;font-weight:600;color:var(--text-primary);">' + (med.nom || '') +
-        (med.dosage ? ' <span style="font-weight:400;color:var(--text-muted);">' + med.dosage + '</span>' : '') + '</div>' +
-        (med.posologie ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">⏱ ' + med.posologie + '</div>' : '') +
-        (med.duree ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">📅 ' + med.duree + '</div>' : '') +
-        '</div>';
-    }
-  } else {
-    medsHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Ordonnance enregistrée</div>';
-  }
-  var notesHtml = resp.notes ? '<div style="background:#FDF8EC;border-radius:14px;padding:14px 16px;border-left:3px solid var(--yellow);margin-top:4px;font-size:12px;color:var(--text-secondary);line-height:1.5;">📋 ' + resp.notes + '</div>' : '';
-  content.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' + thumbHtml + medecinHtml + medsHtml + notesHtml;
-}
-
-function closeDetailOrdonnance() {
-  var detailScreen = document.getElementById('screen-historique-detail-ordonnance');
-  if (detailScreen) detailScreen.classList.remove('active');
-  openHistoriqueSection('ordonnances');
-}
-
-function openDetailImagerie(item) {
-  var listScreen = document.getElementById('screen-historique-imagerie');
-  if (listScreen) listScreen.classList.remove('active');
-  var detailScreen = document.getElementById('screen-historique-detail-imagerie');
-  if (detailScreen) detailScreen.classList.add('active');
-  var content = document.getElementById('detail-imagerie-content');
-  if (!content) return;
-  var resp = item.resp || {};
-  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
-  var thumbHtml = item.thumb
-    ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);"><img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Imagerie"></div>'
-    : '';
-  var examHtml = resp.type_examen
-    ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);border-left:3px solid #3B6B9E;margin-bottom:10px;">' +
-      '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#3B6B9E;margin-bottom:6px;">EXAMEN</div>' +
-      '<div style="font-size:15px;font-weight:600;color:var(--text-primary);">🫁 ' + resp.type_examen + '</div>' +
-      (resp.region ? '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">' + resp.region + '</div>' : '') +
-      '</div>' : '';
-  var conclusionsHtml = resp.conclusions
-    ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:10px;">' +
-      '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#3B6B9E;margin-bottom:6px;">CONCLUSIONS</div>' +
-      '<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">' + resp.conclusions + '</div></div>' : '';
-  var recoHtml = resp.recommandations
-    ? '<div style="background:#EBF2FA;border-radius:14px;padding:14px 16px;border-left:3px solid #3B6B9E;">' +
-      '<div style="font-size:12px;color:#2A4E7A;line-height:1.5;">📋 ' + resp.recommandations + '</div></div>' : '';
-  content.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' + thumbHtml + examHtml + conclusionsHtml + recoHtml;
-}
-
-function closeDetailImagerie() {
-  var detailScreen = document.getElementById('screen-historique-detail-imagerie');
-  if (detailScreen) detailScreen.classList.remove('active');
-  openHistoriqueSection('imagerie');
-}
 
 function renderHistoriqueSection(section) {
   var listEl = document.getElementById('list-' + section);
@@ -1333,7 +1328,35 @@ function renderHistoriqueSection(section) {
       if (!sheetsDates[localDate]) items.unshift(scanHistory.analyses[j]);
     }
   } else {
-    items = (scanHistory[section] || []).slice();
+    // Lire depuis Sheets (allData) + localStorage pour ordonnances et imagerie
+    var rows2 = getUserRows().filter(function(r){ return r.doc_type === section || (section==='ordonnances'&&r.doc_type==='ordonnance'); });
+    for(var ri=0;ri<rows2.length;ri++){
+      var row2=rows2[ri];
+      var resume2='';
+      if(section==='ordonnances'){
+        resume2=row2.medecin?('Dr '+row2.medecin):'Ordonnance';
+        if(row2.specialite)resume2+=' · '+row2.specialite;
+      } else {
+        resume2=row2.type_examen||'Imagerie médicale';
+        if(row2.region)resume2+=' · '+row2.region;
+      }
+      items.push({
+        dateDoc:row2.Date||'',
+        resume:resume2,
+        thumb:row2['image_url']||'',
+        resp:row2,
+        fromSheets:true
+      });
+    }
+    // + localStorage (déduplication par date)
+    var sheetsDates2={};
+    for(var d2=0;d2<items.length;d2++){var dk2=(items[d2].dateDoc||'').substring(0,10);if(dk2)sheetsDates2[dk2]=true;}
+    var localItems=scanHistory[section]||[];
+    for(var j2=0;j2<localItems.length;j2++){
+      var ld=(localItems[j2].date||'').substring(0,10);
+      if(!sheetsDates2[ld])items.push(localItems[j2]);
+    }
+    items.sort(function(a,b){return new Date(b.dateDoc||b.date||0)-new Date(a.dateDoc||a.date||0);});
   }
 
   if (!items.length) {
@@ -1519,6 +1542,9 @@ function handleScanSuccess(resp,dateStr,docType){
   } else if(docType==='ordonnance'){
     var thumbO = document.getElementById('scan-thumb-img');
     saveScanToHistory('ordonnances', resp, dateStr, thumbO ? thumbO.src : '');
+    // Sauvegarder dans allData pour sync multi-appareils via Sheets
+    var newRowO={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'ordonnance',medecin:resp.medecin||'',specialite:resp.specialite||'',notes:resp.notes||'',renouvellement:resp.renouvellement||'','Statut IA':'Analysé','image_url':resp['image_url']||''};
+    allData.unshift(newRowO);
     if(markersEl){
       var h='<div style="grid-column:1/-1">';
       if(resp.medecin)h+='<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;">👨‍⚕️ '+resp.medecin+(resp.specialite?' · '+resp.specialite:'')+'</div>';
@@ -1529,6 +1555,9 @@ function handleScanSuccess(resp,dateStr,docType){
   } else if(docType==='imagerie'){
     var thumbI = document.getElementById('scan-thumb-img');
     saveScanToHistory('imagerie', resp, dateStr, thumbI ? thumbI.src : '');
+    // Sauvegarder dans allData pour sync multi-appareils via Sheets
+    var newRowI={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'imagerie',type_examen:resp.type_examen||'',region:resp.region||'',conclusions:resp.conclusions||'',recommandations:resp.recommandations||'','Statut IA':'Analysé','image_url':resp['image_url']||''};
+    allData.unshift(newRowI);
     if(markersEl){
       var ih='<div style="grid-column:1/-1">';
       if(resp.type_examen)ih+='<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid #3B6B9E;"><div style="font-size:11px;font-weight:700;color:#3B6B9E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Examen</div><div style="font-size:13px;font-weight:600;">'+resp.type_examen+'</div>'+(resp.region?'<div style="font-size:11px;color:var(--text-secondary);">'+resp.region+'</div>':'')+'</div>';
@@ -1740,36 +1769,7 @@ function closeProtocoleDetail() {
   navigate('analyses');
 }
 
-// ── PROTOCOLES THÉMATIQUES
-var PROTOCOLE_SLUGS = ['nutrition', 'sommeil', 'activite', 'stress', 'cardio', 'jeune'];
-
-function openProtocoleTheme(slug) {
-  // Masquer tous les écrans
-  for (var i = 0; i < SCREENS.length; i++) {
-    var el = document.getElementById('screen-' + SCREENS[i]);
-    if (el) el.classList.remove('active');
-  }
-  // Masquer autres thèmes
-  for (var j = 0; j < PROTOCOLE_SLUGS.length; j++) {
-    var t = document.getElementById('screen-protocole-' + PROTOCOLE_SLUGS[j]);
-    if (t) t.classList.remove('active');
-  }
-  var target = document.getElementById('screen-protocole-' + slug);
-  if (target) target.classList.add('active');
-  // Mettre à jour nav active
-  var navBtns = document.querySelectorAll('.nav-item');
-  for (var k = 0; k < navBtns.length; k++) navBtns[k].classList.remove('active');
-  var navProto = document.getElementById('nav-protocole');
-  if (navProto) navProto.classList.add('active');
-}
-
-function closeProtocoleTheme() {
-  for (var j = 0; j < PROTOCOLE_SLUGS.length; j++) {
-    var t = document.getElementById('screen-protocole-' + PROTOCOLE_SLUGS[j]);
-    if (t) t.classList.remove('active');
-  }
-  navigate('protocole');
-}
+-e 
 </script>
 </body>
 </html>
