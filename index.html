@@ -938,18 +938,17 @@ function loadAllData(onComplete) {
   var sheetsLoaded = false;
   var timedOut = false;
 
-  // Fallback : si Sheets ne répond pas en 8s → données embarquées
+  // Fallback : si Sheets ne répond pas en 12s → login possible avec users embarqués
   var fallbackTimer = setTimeout(function() {
     if (sheetsLoaded) return;
     timedOut = true;
-    userData      = getDemoUsers();
-    allData       = getDemoImportData();
-    protocoleData = getDemoProtocoles();
-    dataLoaded    = true;
+    if (!userData || userData.length === 0) userData = getDemoUsers();
+    allData = [];
+    dataLoaded = true;
     if (loginBtn) { loginBtn.disabled = false; loginBtn.textContent = 'Accéder à mon espace'; }
-    if (loginErr) loginErr.textContent = '⚠️ Mode hors-ligne — données locales.';
+    if (loginErr) loginErr.textContent = '⚠️ Données non chargées — vérifiez votre réseau.';
     onComplete();
-  }, 8000);
+  }, 12000);
 
   // Chargement depuis Sheets (source principale)
   fetchSheetViz(GID_USERS, function(err, rows) {
@@ -988,16 +987,9 @@ function refreshFromNetwork() {
 
 
 // ── DEMO DATA
-function getDemoUsers(){return[{email:'n.steinfels@hotmail.com','Prénom':'Nathalie',Nom:'Steinfels',Photo:'https://drive.google.com/file/d/101zHEIy1jeT1oJ1FBTAOnd2V2GI7LA-M/view?usp=drive_link','Date de naissance':'',Poids:''}];}
-function getDemoImportData(){return[
-  {email:'n.steinfels@hotmail.com',Date:'2026-05-17',Ferritine:'34','Glycémie':'1.05',Cortisol:'11','Vitamine D':'35','Statut IA':'Analysé'},
-  {email:'n.steinfels@hotmail.com',Date:'2026-04-15',Ferritine:'34','Glycémie':'1.05',Cortisol:'11','Vitamine D':'35','Statut IA':'Analysé'},
-  {email:'n.steinfels@hotmail.com',Date:'2026-01-01',Ferritine:'28','Glycémie':'1.30',Cortisol:'8','Vitamine D':'22','Statut IA':'Analysé'},
-  {email:'n.steinfels@hotmail.com',Date:'2025-09-10',Ferritine:'42','Glycémie':'1.10',Cortisol:'14','Vitamine D':'38','Statut IA':'Analysé'},
-  {email:'n.steinfels@hotmail.com',Date:'2025-02-01',Ferritine:'38','Glycémie':'1.05',Cortisol:'12','Vitamine D':'30','Statut IA':'Analysé'},
-  {email:'n.steinfels@hotmail.com',Date:'2024-09-15',Ferritine:'55','Glycémie':'0.90',Cortisol:'15','Vitamine D':'60','Statut IA':'Analysé'},
-  {email:'n.steinfels@hotmail.com',Date:'2023-12-30',Ferritine:'25','Glycémie':'0.80',Cortisol:'5','Vitamine D':'18','Statut IA':'Analysé'}
-];}
+function getDemoUsers(){return[{email:'n.steinfels@hotmail.com','Prénom':'Nathalie',Nom:'Steinfels',Photo:'https://drive.google.com/file/d/101zHEIy1jeT1oJ1FBTAOnd2V2GI7LA-M/view?usp=drive_link','Date de naissance':'',Poids:''},{email:'o.steinfels@orange.fr','Prénom':'Olivier',Nom:'Steinfels',Photo:'','Date de naissance':'',Poids:''}];}
+function getDemoImportData(){return[];}
+
 function getDemoProtocoles(){return[
   {Titre:'Régulation de la glycémie',Description:'Limiter les sucres rapides, privilégier des repas à index glycémique bas. Intégrer la cannelle de Ceylan et le chrome.','Catégorie':'Glycémie',Icone:'🥗'},
   {Titre:'Supplémentation Vitamine D',Description:'Cure de vitamine D3 + K2 en association avec des corps gras au repas. Objectif : 50-70 ng/mL.','Catégorie':'Vitamine D',Icone:'☀️'},
@@ -1409,7 +1401,7 @@ function renderHistoriqueSection(section) {
 
       var icon = section === 'ordonnances' ? '\ud83d\udcc4' : section === 'analyses' ? '\ud83e\udeb8' : '\ud83e\udeab';
       var thumbHtml = item.thumb
-        ? '<div class="historique-doc-thumb"><img src="' + item.thumb + '" alt="scan" onerror="this.parentNode.innerHTML='<span style=\\"font-size:24px;\\">' + icon + '</span>'"></div>'
+        ? '<div class="historique-doc-thumb" style="overflow:hidden"><img src="' + item.thumb + '" alt="scan"></div>'
         : '<div class="historique-doc-thumb" style="display:flex;align-items:center;justify-content:center;font-size:24px;">' + icon + '</div>';
 
       var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
