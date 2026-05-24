@@ -1335,7 +1335,6 @@ function renderHistoriqueSection(section) {
   var items = [];
   var sheetsDates = {};
   var rows = getUserRows();
-  console.log('[Vitalis] renderHistoriqueSection(' + section + ') — allData:', allData.length, 'rows, getUserRows:', rows.length);
 
   // 1. Google Sheets
   for (var i = 0; i < rows.length; i++) {
@@ -1611,7 +1610,6 @@ function handleScanSuccess(resp, dateStr, docType) {
 
   // Injecter imm\u00e9diatement dans allData — visible sans attendre Sheets
   allData.unshift(newRow);
-  console.log('[Vitalis] Injected newRow into allData. allData.length=', allData.length, 'row_id=', rowId, 'email=', newRow.email, 'doc_type=', newRow.doc_type);
   saveScanToHistory(docType === 'analyse' ? 'analyses' : docType === 'ordonnance' ? 'ordonnances' : 'imagerie', resp, dateStr, thumbSrc);
 
   // Afficher les marqueurs selon le type
