@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Vitalis Data</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --orange:#E8521A; --orange-light:#FDF0EA; --orange-mid:#F5A07A;
+  --green:#2A9D6E; --green-light:#E8F5EF;
+  --yellow:#D4A017; --yellow-light:#FDF8E1;
+  --red:#C0392B; --red-light:#FDECEA;
+  --orange-status:#E07B3A; --orange-status-light:#FEF3EC;
+  --bg:#F8F6F2; --white:#FFFFFF;
+  --text-primary:#1A1A1A; --text-secondary:#6B6B6B; --text-muted:#A0A0A0;
+  --border:#E8E4DC; --card-shadow:0 2px 16px rgba(0,0,0,0.06);
+  --font-display:'Cormorant Garamond',serif; --font-body:'DM Sans',sans-serif;
+  --nav-height:70px; --header-height:56px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text-primary);max-width:430px;margin:0 auto;min-height:100vh;overflow-x:hidden;position:relative;}
+.screen{display:none;flex-direction:column;min-height:100vh;padding-bottom:calc(var(--nav-height)+16px);animation:fadeIn .25s ease}
+.screen.active{display:flex}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LOGIN */
+#screen-login{display:none;align-items:center;justify-content:center;background:var(--white);padding-bottom:0;min-height:100vh;position:fixed;top:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;z-index:999;overflow-y:auto;}
+#screen-login.active{display:flex}
+.login-wrap{width:100%;padding:48px 32px}
+.login-logo{text-align:center;margin-bottom:48px}
+.login-logo-title{font-family:var(--font-display);font-size:36px;font-weight:600;color:var(--orange);letter-spacing:-0.5px;line-height:1}
+.login-logo-sub{font-size:12px;font-weight:300;color:var(--text-muted);letter-spacing:3px;text-transform:uppercase;margin-top:4px}
+.login-label{font-size:13px;font-weight:500;color:var(--text-secondary);letter-spacing:.5px;margin-bottom:8px;display:block}
+.login-input{width:100%;padding:14px 16px;border:1.5px solid var(--border);border-radius:12px;font-family:var(--font-body);font-size:15px;color:var(--text-primary);background:var(--bg);outline:none;transition:border-color .2s;margin-bottom:24px}
+.login-input:focus{border-color:var(--orange)}
+.login-btn{width:100%;padding:15px;background:var(--orange);color:white;border:none;border-radius:12px;font-family:var(--font-body);font-size:15px;font-weight:600;cursor:pointer;transition:opacity .2s;letter-spacing:.3px}
+.login-btn:active{opacity:.85}
+.login-error{color:var(--red);font-size:13px;text-align:center;margin-top:12px;min-height:18px}
+.login-hint{font-size:12px;color:var(--text-muted);text-align:center;margin-top:32px;line-height:1.6}
+
+/* TOP HEADER */
+.top-header{height:var(--header-height);background:var(--white);display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:50}
+.header-title{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--orange);letter-spacing:-.3px}
+.header-menu-btn{width:36px;height:36px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:5px;cursor:pointer;background:none;border:none;padding:4px}
+.menu-line{width:20px;height:1.5px;background:var(--text-secondary);border-radius:2px}
+.header-right{display:flex;align-items:center;gap:12px}
+.header-notif{width:34px;height:34px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border)}
+
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:var(--nav-height);background:var(--white);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-around;z-index:100;padding:0 4px 8px}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:8px 10px;border-radius:10px;transition:background .15s;min-width:52px;border:none;background:none}
+.nav-item.active .nav-icon{color:var(--orange)}
+.nav-item.active .nav-label{color:var(--orange);font-weight:600}
+.nav-icon{font-size:20px;color:var(--text-muted)}
+.nav-label{font-size:9px;color:var(--text-muted);font-weight:400;white-space:nowrap}
+.scroll-content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.scroll-content::-webkit-scrollbar{display:none}
+
+/* HOME HERO */
+.home-hero{position:relative;height:160px;overflow:hidden}
+.floral-bg-svg{width:100%;height:160px;display:block}
+.home-profile-row{display:flex;align-items:flex-start;gap:14px;padding:0 20px;margin-top:-40px;position:relative;z-index:2}
+.profile-avatar{width:72px;height:72px;border-radius:16px;border:3px solid var(--white);object-fit:cover;box-shadow:0 4px 16px rgba(0,0,0,.12);background:var(--border);flex-shrink:0}
+.profile-avatar-placeholder{width:72px;height:72px;border-radius:16px;border:3px solid var(--white);background:var(--orange-light);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--orange);box-shadow:0 4px 16px rgba(0,0,0,.12);flex-shrink:0}
+.profile-avatar-sm{width:48px;height:48px;border-radius:12px;object-fit:cover;background:var(--orange-light);border:2px solid var(--orange-light);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--orange)}
+.home-greeting{padding:14px 20px 0}
+.greeting-hello{font-size:15px;color:var(--text-secondary);font-weight:300}
+.greeting-name{font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--text-primary);letter-spacing:-.3px;line-height:1.1}
+
+/* VITALITY CARD */
+.vitality-card{margin:16px 20px 0;background:var(--white);border-radius:18px;padding:18px 20px;box-shadow:var(--card-shadow);border:1px solid var(--border)}
+.vitality-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.vitality-label{font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase}
+.vitality-score{font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--orange)}
+.vitality-bar-bg{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-bottom:8px}
+.vitality-bar-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--orange-mid),var(--orange));transition:width .8s ease}
+.vitality-desc{font-size:12px;color:var(--text-muted);font-weight:300}
+
+/* INSIGHT CARD */
+.insight-card{margin:12px 20px 0;background:var(--orange-light);border-radius:16px;padding:14px 16px;border-left:3px solid var(--orange)}
+.insight-text{font-size:13px;color:#8B3A10;line-height:1.5;font-style:italic}
+.insight-icon{font-size:16px;margin-right:6px}
+.section-title{font-size:11px;font-weight:600;color:var(--text-muted);letter-spacing:1.5px;text-transform:uppercase;padding:20px 20px 10px}
+
+/* MARKER CARDS */
+.markers-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px}
+.marker-card{background:var(--white);border-radius:14px;padding:14px;border:1px solid var(--border);box-shadow:var(--card-shadow);cursor:pointer;transition:transform .15s;position:relative;overflow:hidden}
+.marker-card:active{transform:scale(.97)}
+.marker-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.marker-card.status-optimal::before{background:var(--green)}
+.marker-card.status-warning::before{background:var(--yellow)}
+.marker-card.status-danger::before{background:var(--red)}
+.marker-card.status-orange::before{background:var(--orange-status)}
+.marker-name{font-size:9px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px}
+.marker-name.status-optimal{color:var(--green)}
+.marker-name.status-warning{color:var(--yellow)}
+.marker-name.status-danger{color:var(--red)}
+.marker-name.status-orange{color:var(--orange-status)}
+.marker-value{font-family:var(--font-display);font-size:24px;font-weight:600;color:var(--text-primary);line-height:1;margin-bottom:4px}
+.marker-unit{font-size:11px;color:var(--text-muted);margin-bottom:8px}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.status-badge.optimal{background:var(--green-light);color:#1A6E4A}
+.status-badge.warning{background:var(--yellow-light);color:#8B6A00}
+.status-badge.danger{background:var(--red-light);color:#922B21}
+.status-badge.orange{background:var(--orange-status-light);color:#8B4A10}
+.status-dot{width:7px;height:7px;border-radius:50%}
+.status-dot.optimal{background:var(--green)}
+.status-dot.warning{background:var(--yellow)}
+.status-dot.danger{background:var(--red)}
+.status-dot.orange{background:var(--orange-status)}
+
+/* QUICK GRID */
+.quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px;margin-bottom:28px}
+.quick-card{background:var(--white);border-radius:18px;padding:20px 12px 16px;border:1px solid var(--border);box-shadow:0 3px 20px rgba(0,0,0,.07);cursor:pointer;transition:transform .18s,box-shadow .18s;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+.quick-card:active{transform:scale(.95);box-shadow:0 1px 8px rgba(0,0,0,.05)}
+.quick-card-circle{width:80px;height:80px;border-radius:50%;overflow:hidden;flex-shrink:0;border:2.5px solid var(--border)}
+.quick-card-circle img{width:100%;height:100%;object-fit:cover;display:block}
+.quick-card-label{font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.35;padding:0 4px}
+.quick-card-label small{display:block;font-size:10px;font-weight:400;color:var(--text-muted);margin-top:2px}
+
+/* ANALYSES */
+.analyses-header-card{background:var(--white);padding:16px 20px;border-bottom:1px solid var(--border)}
+.profile-row-sm{display:flex;align-items:center;gap:12px;margin-bottom:4px}
+.profile-name-sm{font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--text-primary)}
+.profile-sub-sm{font-size:11px;color:var(--text-muted);font-weight:300;letter-spacing:.5px}
+.marker-tabs{display:flex;gap:8px;padding:16px 20px 0;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.marker-tabs::-webkit-scrollbar{display:none}
+.marker-tab{flex-shrink:0;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text-secondary);transition:all .2s}
+.marker-tab.active{background:var(--orange);border-color:var(--orange);color:white;font-weight:600}
+.chart-container{background:var(--white);margin:16px 20px 0;border-radius:16px;padding:16px;border:1px solid var(--border);box-shadow:var(--card-shadow)}
+.chart-title{font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--text-primary);margin-bottom:12px;text-align:center}
+.trend-badge{display:flex;align-items:center;gap:6px;background:var(--green-light);border-radius:10px;padding:10px 14px;margin-bottom:14px;border-left:3px solid var(--green)}
+.trend-badge.down{background:var(--red-light);border-left-color:var(--red)}
+.trend-badge.stable{background:var(--yellow-light);border-left-color:var(--yellow)}
+.trend-text{font-size:12px;font-weight:500;color:#1A6E4A}
+.trend-badge.down .trend-text{color:#922B21}
+.trend-badge.stable .trend-text{color:#8B6A00}
+.chart-canvas-wrap{position:relative;height:180px}
+.chart-note{font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.5;padding-top:10px;border-top:1px solid var(--bg)}
+.history-section-title{display:flex;align-items:center;gap:8px;padding:20px 20px 12px;font-size:13px;font-weight:600;color:var(--text-primary)}
+.history-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 20px}
+.history-item{background:var(--white);border-radius:12px;padding:12px;border:1px solid var(--border)}
+.history-item-status{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;margin-bottom:4px}
+.history-item-value{font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--text-primary)}
+.history-item-unit{font-size:10px;color:var(--text-muted)}
+.history-bar{height:4px;border-radius:2px;margin-top:6px;width:70%}
+.history-bar.optimal{background:var(--green)}
+.history-bar.warning{background:var(--yellow)}
+.history-bar.danger{background:var(--red)}
+.history-bar.orange{background:var(--orange-status)}
+.history-item-date{font-size:10px;color:var(--text-muted);margin-top:4px}
+.protocol-btn{margin:16px 20px 24px;width:calc(100% - 40px);padding:15px;background:var(--orange);color:white;border:none;border-radius:14px;font-family:var(--font-body);font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .2s}
+.protocol-btn:active{opacity:.85}
+
+/* PROTOCOLE */
+.protocole-hero{position:relative;height:220px;overflow:hidden}
+.protocole-hero img{width:100%;height:100%;object-fit:cover;display:block}
+.protocole-hero-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1) 0%,rgba(0,0,0,.55) 100%)}
+.protocole-hero-text{position:absolute;bottom:0;left:0;right:0;padding:20px}
+.protocole-hero-title{font-family:var(--font-display);font-size:28px;font-weight:600;color:white;line-height:1.2;letter-spacing:-.3px}
+.protocole-menu-list{padding:0;margin:0;list-style:none}
+.protocole-menu-item{display:flex;align-items:center;gap:14px;padding:16px 20px;background:var(--white);border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;text-decoration:none}
+.protocole-menu-item:active{background:var(--bg)}
+.protocole-menu-icon{width:48px;height:48px;border-radius:14px;overflow:hidden;flex-shrink:0;background:var(--border)}
+.protocole-menu-icon img{width:100%;height:100%;object-fit:cover;display:block}
+.protocole-menu-text{flex:1}
+.protocole-menu-title{font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+.protocole-menu-obj{font-size:11px;color:var(--text-muted);line-height:1.4}
+.protocole-menu-arrow{font-size:20px;color:var(--text-muted);font-weight:300}
+/* Page détail thématique */
+.protocole-theme-screen{display:none;flex-direction:column;min-height:100vh;padding-bottom:calc(var(--nav-height)+16px);animation:fadeIn .25s ease}
+.protocole-theme-screen.active{display:flex}
+.protocole-theme-header{position:relative;height:200px;overflow:hidden;flex-shrink:0}
+.protocole-theme-header img{width:100%;height:100%;object-fit:cover;display:block}
+.protocole-theme-header-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,rgba(0,0,0,.45) 100%)}
+.protocole-theme-back{position:absolute;top:16px;left:16px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.25);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:white;text-decoration:none}
+.protocole-theme-emoji{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px}
+.protocole-theme-body{padding:24px 20px;background:var(--white);flex:1}
+.protocole-theme-title{font-family:var(--font-display);font-size:26px;font-weight:600;color:var(--text-primary);margin-bottom:6px;letter-spacing:-.3px}
+.protocole-theme-obj{font-size:12px;font-weight:600;color:var(--orange);letter-spacing:.8px;text-transform:uppercase;margin-bottom:14px}
+.protocole-theme-text{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.protocole-theme-img{width:calc(100% + 40px);margin:-0px -20px 0;display:block;max-height:220px;object-fit:cover}
+
+/* GRAPHIQUE */
+.graphique-list{padding:20px;display:flex;flex-direction:column;gap:14px}
+.graphique-item{background:var(--white);border-radius:14px;padding:16px;border:1px solid var(--border);box-shadow:var(--card-shadow)}
+.graphique-item-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.graphique-item-name{font-size:15px;font-weight:600;color:var(--text-primary)}
+.graphique-item-value{font-family:var(--font-display);font-size:16px;font-weight:600;color:var(--text-secondary)}
+.graphique-bar-bg{height:8px;background:var(--bg);border-radius:4px;overflow:hidden;margin-top:8px}
+.graphique-bar-fill{height:100%;border-radius:4px}
+
+/* HISTORIQUE */
+.historique-banner{background:var(--orange-light);border-radius:14px;margin:16px 20px 0;padding:14px 16px;display:flex;align-items:center;gap:10px;border-left:3px solid var(--orange)}
+.historique-banner-icon{font-size:20px}
+.historique-banner-text{font-size:13px;color:#8B3A10;font-weight:500}
+/* Grille 2 colonnes des 3 catégories */
+.historique-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px 20px}
+.historique-cat-card{background:var(--white);border-radius:18px;padding:0;border:1px solid var(--border);box-shadow:0 3px 20px rgba(0,0,0,.07);cursor:pointer;transition:transform .18s;overflow:hidden;display:flex;flex-direction:column;align-items:center}
+.historique-cat-card:active{transform:scale(.96)}
+.historique-cat-card.full-width{grid-column:1/-1;max-width:calc(50% - 6px)}
+.historique-cat-circle{width:88px;height:88px;border-radius:50%;overflow:hidden;margin:18px auto 0;border:2px solid var(--border);flex-shrink:0}
+.historique-cat-circle img{width:100%;height:100%;object-fit:cover;display:block}
+.historique-cat-label{font-size:13px;font-weight:600;color:var(--text-primary);text-align:center;padding:12px 10px 16px;line-height:1.3}
+/* Sous-pages historique */
+.historique-sub-screen{display:none;flex-direction:column;min-height:100vh;padding-bottom:calc(var(--nav-height)+16px);animation:fadeIn .25s ease}
+.historique-sub-screen.active{display:flex}
+.historique-doc-list{padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.historique-doc-item{background:var(--white);border-radius:14px;padding:14px;border:1px solid var(--border);box-shadow:var(--card-shadow);display:flex;gap:12px;align-items:center;cursor:pointer}
+.historique-doc-item:active{opacity:.8}
+.historique-doc-thumb{width:60px;height:60px;border-radius:10px;overflow:hidden;flex-shrink:0;background:var(--bg);border:1px solid var(--border)}
+.historique-doc-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.historique-doc-info{flex:1;min-width:0}
+.historique-doc-resume{font-size:12px;font-weight:500;color:var(--text-primary);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.historique-doc-date{font-size:11px;color:var(--text-muted)}
+.historique-doc-type{font-size:9px;font-weight:700;color:var(--orange);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
+.historique-doc-arrow{font-size:18px;color:var(--text-muted)}
+.historique-empty{text-align:center;padding:48px 20px;color:var(--text-muted);font-size:13px;line-height:1.6}
+.historique-empty-icon{font-size:40px;margin-bottom:12px}
+
+/* SCANNER */
+.scanner-wrap{padding:20px 20px 40px}
+/* 3 doc-type cards */
+.scan-type-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:4px}
+.scan-type-card{width:100%;border:none;border-radius:20px;padding:0;cursor:pointer;overflow:hidden;transition:transform .18s,box-shadow .18s;display:block;text-align:left;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+.scan-type-card:active{transform:scale(.97);box-shadow:0 1px 8px rgba(0,0,0,.06)}
+.scan-type-card.analyse{background:linear-gradient(135deg,#E8521A 0%,#C94010 100%)}
+.scan-type-card.ordonnance{background:linear-gradient(135deg,#2A9D6E 0%,#1A7A52 100%)}
+.scan-type-card.imagerie{background:linear-gradient(135deg,#3B6B9E 0%,#2A4E7A 100%)}
+.scan-type-inner{display:flex;align-items:center;gap:16px;padding:20px 22px}
+.scan-type-icon{width:54px;height:54px;border-radius:16px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.scan-type-icon svg{width:28px;height:28px}
+.scan-type-text{flex:1}
+.scan-type-title{font-size:15px;font-weight:700;color:white;letter-spacing:-.2px;margin-bottom:3px}
+.scan-type-sub{font-size:11px;color:rgba(255,255,255,.75);line-height:1.4}
+.scan-type-arrow{font-size:22px;color:rgba(255,255,255,.6);margin-left:auto}
+/* inputs cachés */
+.scan-file-input{display:none}
+/* état loading */
+.scan-spinner{width:44px;height:44px;border:3px solid var(--border);border-top-color:var(--orange);border-radius:50%;margin:0 auto;animation:spin .9s linear infinite}
+/* bouton reset */
+.scan-capture-btn{width:100%;background:var(--orange);border:none;border-radius:20px;padding:0;cursor:pointer;overflow:hidden;margin-bottom:10px;transition:transform .15s,opacity .15s;display:block}
+.scan-capture-btn:active{transform:scale(.97);opacity:.9}
+.scan-capture-inner{display:flex;align-items:center;gap:16px;padding:22px 24px}
+.scan-capture-icon-wrap{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.scan-capture-text{text-align:left}
+.scan-capture-title{font-size:16px;font-weight:700;color:white;letter-spacing:-.2px;margin-bottom:3px}
+.scan-capture-sub{font-size:12px;color:rgba(255,255,255,.8);line-height:1.4}
+.scan-webhook-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:12px;font-family:monospace;color:var(--text-secondary);background:var(--bg);outline:none}
+.scan-webhook-input:focus{border-color:var(--orange)}
+/* badge type sur le résultat */
+.scan-result-type-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;margin-bottom:12px}
+.scan-result-type-badge.analyse{background:#FDF0EA;color:var(--orange)}
+.scan-result-type-badge.ordonnance{background:var(--green-light);color:#1A6E4A}
+.scan-result-type-badge.imagerie{background:#EBF2FA;color:#2A4E7A}
+
+/* CONTACT */
+.contact-wrap{padding:20px}
+.contact-coach-card{background:var(--white);border-radius:18px;padding:24px;border:1px solid var(--border);box-shadow:var(--card-shadow);text-align:center;margin-bottom:20px}
+.contact-name{font-family:var(--font-display);font-size:22px;font-weight:600;color:var(--text-primary)}
+.contact-role{font-size:12px;color:var(--text-muted);margin-top:4px;letter-spacing:.5px}
+.contact-tagline{font-size:13px;color:var(--text-secondary);margin-top:10px;font-style:italic;line-height:1.5}
+.contact-actions{display:flex;flex-direction:column;gap:10px}
+.contact-action-btn{width:100%;padding:15px 20px;border-radius:14px;border:none;display:flex;align-items:center;gap:12px;cursor:pointer;font-family:var(--font-body);font-size:14px;font-weight:600;transition:opacity .2s}
+.contact-action-btn:active{opacity:.8}
+.contact-action-btn.whatsapp{background:#25D366;color:white}
+.contact-action-btn.email{background:var(--orange);color:white}
+.contact-action-icon{font-size:20px}
+
+/* PROTOCOLE DETAIL */
+.protocole-detail-wrap{padding:0 0 32px}
+.protocole-detail-header{background:var(--white);padding:20px 20px 24px;border-bottom:1px solid var(--border);position:relative}
+.protocole-detail-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--text-muted)}
+.protocole-detail-patient{font-size:12px;color:var(--text-muted);font-weight:500;letter-spacing:.5px;margin-bottom:8px}
+.protocole-detail-title{font-family:var(--font-display);font-size:28px;font-weight:600;color:var(--text-primary);letter-spacing:-.3px;line-height:1.15;margin-bottom:10px}
+.protocole-detail-trigger{font-size:13px;color:var(--text-secondary);line-height:1.5;font-style:italic}
+.protocole-detail-body{padding:20px}
+.protocole-section{margin-bottom:24px}
+.protocole-section-num{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--orange);color:white;font-size:12px;font-weight:700;flex-shrink:0;margin-right:10px}
+.protocole-section-title{font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--text-primary);line-height:1.2;display:flex;align-items:center;margin-bottom:10px}
+.protocole-section-intro{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:10px}
+.protocole-bullet-list{display:flex;flex-direction:column;gap:8px}
+.protocole-bullet{background:var(--white);border-radius:12px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--orange);font-size:13px;color:var(--text-secondary);line-height:1.5}
+.protocole-bullet strong{color:var(--text-primary);font-weight:600}
+.protocole-food-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.protocole-food-card{background:var(--white);border-radius:12px;padding:12px;border:1px solid var(--border);display:flex;align-items:flex-start;gap:10px}
+.protocole-food-icon{font-size:20px;flex-shrink:0}
+.protocole-food-name{font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:2px}
+.protocole-food-desc{font-size:10px;color:var(--text-muted);line-height:1.4}
+.protocole-highlight-box{background:var(--orange-light);border-radius:14px;padding:16px;border-left:3px solid var(--orange);margin-bottom:8px}
+.protocole-highlight-text{font-size:13px;color:#8B3A10;line-height:1.6}
+
+/* MISC */
+.loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:12px}
+.loading-spinner{width:32px;height:32px;border:2.5px solid var(--border);border-top-color:var(--orange);border-radius:50%;animation:spin .8s linear infinite}
+.loading-text{font-size:13px;color:var(--text-muted)}
+.no-data{text-align:center;padding:40px 20px;color:var(--text-muted);font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="screen-login" class="active">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <svg width="120" height="40" viewBox="0 0 120 40" style="display:block;margin:0 auto 16px">
+        <ellipse cx="20" cy="28" rx="8" ry="12" fill="#E8521A" opacity=".15" transform="rotate(-15 20 28)"/>
+        <ellipse cx="20" cy="28" rx="5" ry="9" fill="#E8521A" opacity=".3" transform="rotate(-15 20 28)"/>
+        <ellipse cx="40" cy="20" rx="7" ry="11" fill="#E8521A" opacity=".2" transform="rotate(5 40 20)"/>
+        <ellipse cx="60" cy="26" rx="8" ry="12" fill="#E8521A" opacity=".15" transform="rotate(-8 60 26)"/>
+        <ellipse cx="80" cy="20" rx="7" ry="11" fill="#E8521A" opacity=".2" transform="rotate(10 80 20)"/>
+        <ellipse cx="100" cy="28" rx="8" ry="12" fill="#E8521A" opacity=".15" transform="rotate(-12 100 28)"/>
+        <line x1="0" y1="35" x2="120" y2="35" stroke="#E8521A" stroke-width="1" opacity=".2"/>
+      </svg>
+      <div class="login-logo-title">Vitalis Data</div>
+      <div class="login-logo-sub">Stratégie de longévité</div>
+    </div>
+    <label class="login-label">Adresse email</label>
+    <input type="email" class="login-input" id="login-email" placeholder="prenom@email.com" autocomplete="email">
+    <button class="login-btn" id="login-btn" onclick="handleLogin()">Accéder à mon espace</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-hint">Accès sécurisé par adresse email.<br>Aucun mot de passe requis.</div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav" id="bottom-nav" style="display:none">
+  <button class="nav-item active" onclick="navigate('accueil')" id="nav-accueil"><span class="nav-icon">🏠</span><span class="nav-label">Accueil</span></button>
+  <button class="nav-item" onclick="navigate('scanner')" id="nav-scanner"><span class="nav-icon">◇</span><span class="nav-label">Scanner</span></button>
+  <button class="nav-item" onclick="navigate('analyses')" id="nav-analyses"><span class="nav-icon">🩷</span><span class="nav-label">Analyses</span></button>
+  <button class="nav-item" onclick="navigate('protocole')" id="nav-protocole"><span class="nav-icon">⚡</span><span class="nav-label">Protocole</span></button>
+  <button class="nav-item" onclick="navigate('historique')" id="nav-historique"><span class="nav-icon">📂</span><span class="nav-label">Mon Histo.</span></button>
+  <button class="nav-item" onclick="navigate('graphique')" id="nav-graphique"><span class="nav-icon">📊</span><span class="nav-label">Graphique</span></button>
+</nav>
+
+<!-- ACCUEIL -->
+<div id="screen-accueil" class="screen">
+  <div class="top-header">
+    <button class="header-menu-btn" onclick="showMenu()"><div class="menu-line"></div><div class="menu-line" style="width:20px"></div><div class="menu-line" style="width:16px"></div></button>
+    <span class="header-title">Vitalis Data</span>
+    <div class="header-right"><div class="header-notif"><span style="font-size:16px">🔔</span></div></div>
+  </div>
+  <div class="scroll-content">
+    <div class="home-hero">
+      <svg class="floral-bg-svg" viewBox="0 0 430 160" xmlns="http://www.w3.org/2000/svg">
+        <rect width="430" height="160" fill="#FDF6EE"/>
+        <ellipse cx="40" cy="140" rx="18" ry="55" fill="#E8521A" opacity=".12" transform="rotate(-10 40 140)"/>
+        <ellipse cx="40" cy="140" rx="11" ry="40" fill="#E8521A" opacity=".2" transform="rotate(-10 40 140)"/>
+        <ellipse cx="72" cy="130" rx="16" ry="50" fill="#D4470E" opacity=".15" transform="rotate(8 72 130)"/>
+        <ellipse cx="105" cy="145" rx="18" ry="52" fill="#E8521A" opacity=".1" transform="rotate(-5 105 145)"/>
+        <ellipse cx="138" cy="132" rx="15" ry="48" fill="#D4470E" opacity=".13" transform="rotate(12 138 132)"/>
+        <ellipse cx="170" cy="142" rx="17" ry="53" fill="#E8521A" opacity=".11" transform="rotate(-8 170 142)"/>
+        <ellipse cx="205" cy="128" rx="14" ry="46" fill="#D4470E" opacity=".14" transform="rotate(6 205 128)"/>
+        <ellipse cx="240" cy="138" rx="18" ry="54" fill="#E8521A" opacity=".12" transform="rotate(-12 240 138)"/>
+        <ellipse cx="275" cy="130" rx="15" ry="49" fill="#E8521A" opacity=".16" transform="rotate(9 275 130)"/>
+        <ellipse cx="310" cy="144" rx="17" ry="52" fill="#D4470E" opacity=".11" transform="rotate(-6 310 144)"/>
+        <ellipse cx="345" cy="133" rx="14" ry="47" fill="#E8521A" opacity=".15" transform="rotate(14 345 133)"/>
+        <ellipse cx="380" cy="140" rx="18" ry="54" fill="#E8521A" opacity=".12" transform="rotate(-9 380 140)"/>
+        <ellipse cx="415" cy="130" rx="16" ry="50" fill="#D4470E" opacity=".14" transform="rotate(7 415 130)"/>
+        <line x1="40" y1="160" x2="38" y2="100" stroke="#8B6914" stroke-width="1.5" opacity=".25"/>
+        <line x1="72" y1="160" x2="74" y2="92" stroke="#8B6914" stroke-width="1.5" opacity=".25"/>
+        <line x1="105" y1="160" x2="103" y2="105" stroke="#8B6914" stroke-width="1.5" opacity=".25"/>
+        <line x1="170" y1="160" x2="168" y2="100" stroke="#8B6914" stroke-width="1.5" opacity=".25"/>
+        <line x1="240" y1="160" x2="238" y2="98" stroke="#8B6914" stroke-width="1.5" opacity=".25"/>
+        <line x1="310" y1="160" x2="308" y2="104" stroke="#8B6914" stroke-width="1.5" opacity=".25"/>
+        <line x1="380" y1="160" x2="378" y2="100" stroke="#8B6914" stroke-width="1.5" opacity=".25"/>
+        <defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1"><stop offset="50%" stop-color="#FDF6EE" stop-opacity="0"/><stop offset="100%" stop-color="#F8F6F2" stop-opacity="1"/></linearGradient></defs>
+        <rect width="430" height="160" fill="url(#hg)"/>
+      </svg>
+    </div>
+    <div class="home-profile-row">
+      <div class="profile-avatar-placeholder" id="home-avatar-placeholder">N</div>
+    </div>
+    <div class="home-greeting">
+      <div class="greeting-hello">Bonjour,</div>
+      <div class="greeting-name" id="home-name">—</div>
+    </div>
+    <div class="vitality-card">
+      <div class="vitality-header"><span class="vitality-label">Capital Vitalité</span><span class="vitality-score" id="home-vitality-score">—%</span></div>
+      <div class="vitality-bar-bg"><div class="vitality-bar-fill" id="home-vitality-bar" style="width:0%"></div></div>
+      <div class="vitality-desc">Score basé sur vos 4 marqueurs de longévité</div>
+    </div>
+    <div class="insight-card"><span class="insight-icon">✨</span><span class="insight-text">Voici l'état actuel de vos marqueurs de longévité. Chaque donnée nous permet d'affiner, ensemble, votre stratégie de vitalité.</span></div>
+    <div class="section-title">Marqueurs de longévité</div>
+    <div class="markers-grid" id="home-markers-grid"><div class="loading-wrap" style="grid-column:1/-1"><div class="loading-spinner"></div><span class="loading-text">Chargement…</span></div></div>
+    <div class="section-title" style="margin-top:8px">Mon espace</div>
+    <div class="quick-grid">
+      <div class="quick-card" onclick="navigate('analyses')">
+        <div class="quick-card-circle"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI0YyRUJFNSIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNzgiIGZpbGw9IiNFREUxRDgiLz48cmVjdCB4PSI4NSIgeT0iMzgiIHdpZHRoPSIyMiIgaGVpZ2h0PSI3MiIgcng9IjQiIGZpbGw9IiNENEI1QTAiLz48cmVjdCB4PSI4NSIgeT0iMzgiIHdpZHRoPSIyMiIgaGVpZ2h0PSI4IiByeD0iMiIgZmlsbD0iI0I4OTA4MCIvPjxyZWN0IHg9Ijg3IiB5PSI4MiIgd2lkdGg9IjE4IiBoZWlnaHQ9IjI0IiByeD0iMyIgZmlsbD0iI0MwMzkyQiIgb3BhY2l0eT0iLjc1Ii8+PHJlY3QgeD0iMTE2IiB5PSI1MiIgd2lkdGg9IjE2IiBoZWlnaHQ9IjUyIiByeD0iMyIgZmlsbD0iI0Q0QjVBMCIvPjxyZWN0IHg9IjExNiIgeT0iNTIiIHdpZHRoPSIxNiIgaGVpZ2h0PSI3IiByeD0iMiIgZmlsbD0iI0I4OTA4MCIvPjxyZWN0IHg9IjExOCIgeT0iODUiIHdpZHRoPSIxMiIgaGVpZ2h0PSIxNiIgcng9IjIiIGZpbGw9IiMyQTlENkUiIG9wYWNpdHk9Ii43Ii8+PHJlY3QgeD0iMTE1IiB5PSI0OCIgd2lkdGg9IjE4IiBoZWlnaHQ9IjciIHJ4PSIzIiBmaWxsPSIjOEI2OTE0Ii8+PHJlY3QgeD0iODQiIHk9IjMzIiB3aWR0aD0iMjQiIGhlaWdodD0iOCIgcng9IjMiIGZpbGw9IiM4QjY5MTQiLz48cGF0aCBkPSJNNjggMTE4IFE2MiAxMDggNjIgMTA0IEE2IDYgMCAwIDEgNzQgMTA0IFE3NCAxMDggNjggMTE4WiIgZmlsbD0iI0MwMzkyQiIgb3BhY2l0eT0iLjg1Ii8+PHJlY3QgeD0iODgiIHk9IjQyIiB3aWR0aD0iNCIgaGVpZ2h0PSIzMCIgcng9IjIiIGZpbGw9IndoaXRlIiBvcGFjaXR5PSIuMjUiLz48bGluZSB4MT0iMTA3IiB5MT0iNjAiIHgyPSIxMTIiIHkyPSI2MCIgc3Ryb2tlPSIjQjg5MDgwIiBzdHJva2Utd2lkdGg9IjEuNSIvPjxsaW5lIHgxPSIxMDciIHkxPSI3MCIgeDI9IjExMiIgeTI9IjcwIiBzdHJva2U9IiNCODkwODAiIHN0cm9rZS13aWR0aD0iMS41Ii8+PC9zdmc+" alt="Analyses"></div>
+        <div class="quick-card-label">Mes Analyses</div>
+      </div>
+      <div class="quick-card" onclick="navigate('protocole')">
+        <div class="quick-card-circle"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI0VBRjBFRCIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNzgiIGZpbGw9IiNERkYwRTgiLz48ZWxsaXBzZSBjeD0iMTAwIiBjeT0iMTU4IiByeD0iNDUiIHJ5PSI2IiBmaWxsPSIjQjhEOEM4IiBvcGFjaXR5PSIuNSIvPjxwYXRoIGQ9Ik02OCAxNDggUTc1IDEzNSAxMDAgMTMyIFExMjUgMTM1IDEzMiAxNDgiIHN0cm9rZT0iIzJBN0Q1RSIgc3Ryb2tlLXdpZHRoPSIzLjUiIGZpbGw9Im5vbmUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPjxlbGxpcHNlIGN4PSI2OCIgY3k9IjE0OSIgcng9IjgiIHJ5PSI1IiBmaWxsPSIjMkE3RDVFIiBvcGFjaXR5PSIuNyIvPjxlbGxpcHNlIGN4PSIxMzIiIGN5PSIxNDkiIHJ4PSI4IiByeT0iNSIgZmlsbD0iIzJBN0Q1RSIgb3BhY2l0eT0iLjciLz48cGF0aCBkPSJNODggMTMyIFE4OCAxMDggMTAwIDEwNSBRMTEyIDEwOCAxMTIgMTMyIiBmaWxsPSIjMkE5RDZFIiBvcGFjaXR5PSIuOCIvPjxwYXRoIGQ9Ik04OCAxMTggUTcyIDEyMiA2NiAxMzUiIHN0cm9rZT0iIzJBN0Q1RSIgc3Ryb2tlLXdpZHRoPSI0IiBmaWxsPSJub25lIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48Y2lyY2xlIGN4PSI2NCIgY3k9IjEzNyIgcj0iNSIgZmlsbD0iIzJBN0Q1RSIgb3BhY2l0eT0iLjciLz48cGF0aCBkPSJNMTEyIDExOCBRMTI4IDEyMiAxMzQgMTM1IiBzdHJva2U9IiMyQTdENUUiIHN0cm9rZS13aWR0aD0iNCIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iMTM2IiBjeT0iMTM3IiByPSI1IiBmaWxsPSIjMkE3RDVFIiBvcGFjaXR5PSIuNyIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9Ijk3IiByPSIxMyIgZmlsbD0iI0Q0QTg4MiIvPjxwYXRoIGQ9Ik04OCA5NSBROTAgODIgMTAwIDgwIFExMTAgODIgMTEyIDk1IiBmaWxsPSIjNUMzQTFFIiBvcGFjaXR5PSIuOCIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzJBOUQ2RSIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIuMjUiIHN0cm9rZS1kYXNoYXJyYXk9IjQgNiIvPjwvc3ZnPg==" alt="Protocole"></div>
+        <div class="quick-card-label">Mon Protocole</div>
+      </div>
+      <div class="quick-card" onclick="navigate('historique')">
+        <div class="quick-card-circle"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI0VFRTlFMiIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNzgiIGZpbGw9IiNFNURERDQiLz48cmVjdCB4PSI3MiIgeT0iNTAiIHdpZHRoPSI2NCIgaGVpZ2h0PSI4MiIgcng9IjUiIGZpbGw9IiNENEM4QjgiIHRyYW5zZm9ybT0icm90YXRlKC02IDEwNCA5MSkiLz48cmVjdCB4PSI2OCIgeT0iNDgiIHdpZHRoPSI2NCIgaGVpZ2h0PSI4MiIgcng9IjUiIGZpbGw9IiNDNEI1QTAiIHRyYW5zZm9ybT0icm90YXRlKDMgMTAwIDg5KSIvPjxyZWN0IHg9IjY1IiB5PSI0NSIgd2lkdGg9IjcwIiBoZWlnaHQ9IjkwIiByeD0iNiIgZmlsbD0iI0ZERkFGNyIvPjxyZWN0IHg9IjY1IiB5PSI0NSIgd2lkdGg9IjcwIiBoZWlnaHQ9IjE0IiByeD0iNiA2IDAgMCIgZmlsbD0iI0U4RTBENSIvPjxyZWN0IHg9IjczIiB5PSI3MCIgd2lkdGg9IjQyIiBoZWlnaHQ9IjQiIHJ4PSIyIiBmaWxsPSIjQzRCNUEwIi8+PHJlY3QgeD0iNzMiIHk9IjgwIiB3aWR0aD0iNTAiIGhlaWdodD0iMyIgcng9IjEuNSIgZmlsbD0iI0Q0QzhCOCIvPjxyZWN0IHg9IjczIiB5PSI4OCIgd2lkdGg9IjQ2IiBoZWlnaHQ9IjMiIHJ4PSIxLjUiIGZpbGw9IiNENEM4QjgiLz48cmVjdCB4PSI3MyIgeT0iOTYiIHdpZHRoPSIzOCIgaGVpZ2h0PSIzIiByeD0iMS41IiBmaWxsPSIjRDRDOEI4Ii8+PGNpcmNsZSBjeD0iMTE1IiBjeT0iMTE4IiByPSIxNCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjRTg1MjFBIiBzdHJva2Utd2lkdGg9IjIiIG9wYWNpdHk9Ii41Ii8+PHRleHQgeD0iMTE1IiB5PSIxMjIiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtc2l6ZT0iOCIgZmlsbD0iI0U4NTIxQSIgb3BhY2l0eT0iLjYiIGZvbnQtZmFtaWx5PSJzZXJpZiI+Ung8L3RleHQ+PHBhdGggZD0iTTEyNiA1MCBRMTM0IDUwIDEzNCA1OCBRMTM0IDcyIDEyNiA3MiBRMTIwIDcyIDEyMCA2NCBRMTIwIDU4IDEyNiA1OCBRMTMwIDU4IDEzMCA2NCIgc3Ryb2tlPSIjQjg5MDgwIiBzdHJva2Utd2lkdGg9IjIuNSIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PC9zdmc+" alt="Historique"></div>
+        <div class="quick-card-label">Mon Historique<small>(Ordonnances, Analyses…)</small></div>
+      </div>
+      <div class="quick-card" onclick="navigate('contact')">
+        <div class="quick-card-circle"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI0VCRTZGMCIvPjxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iNzgiIGZpbGw9IiNEREQ1RUEiLz48cGF0aCBkPSJNNTUgMjAwIFE1NSAxNTUgNzAgMTQ4IFE4NSAxNDIgMTAwIDE0NSBRMTE1IDE0MiAxMzAgMTQ4IFExNDUgMTU1IDE0NSAyMDBaIiBmaWxsPSIjNEEzQjZFIi8+PHBhdGggZD0iTTg4IDE0OCBRMTAwIDE1OCAxMTIgMTQ4IEwxMTIgMTY1IFExMDAgMTcwIDg4IDE2NVoiIGZpbGw9IiNGREZBRjciLz48cmVjdCB4PSI5MiIgeT0iMTM1IiB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHJ4PSI0IiBmaWxsPSIjRDRBODgyIi8+PGVsbGlwc2UgY3g9IjEwMCIgY3k9IjEyMiIgcng9IjIyIiByeT0iMjQiIGZpbGw9IiNENEE4ODIiLz48cGF0aCBkPSJNNzggMTE1IFE3NCA5NSA3OCA4MCBRODIgNjUgMTAwIDYyIFExMTggNjUgMTIyIDgwIFExMjYgOTUgMTIyIDExNSIgZmlsbD0iIzNEMkIxRiIvPjxwYXRoIGQ9Ik03OCAxMTUgUTcwIDEzMCA3MiAxNDggUTc2IDE1NSA4MCAxNTAgUTgyIDEzOCA4MiAxMjUiIGZpbGw9IiMzRDJCMUYiLz48cGF0aCBkPSJNMTIyIDExNSBRMTMwIDEzMCAxMjggMTQ4IFExMjQgMTU1IDEyMCAxNTAgUTExOCAxMzggMTE4IDEyNSIgZmlsbD0iIzNEMkIxRiIvPjxlbGxpcHNlIGN4PSI5MSIgY3k9IjEyMiIgcng9IjMiIHJ5PSIzLjUiIGZpbGw9IiM1QzNBMUUiIG9wYWNpdHk9Ii43Ii8+PGVsbGlwc2UgY3g9IjEwOSIgY3k9IjEyMiIgcng9IjMiIHJ5PSIzLjUiIGZpbGw9IiM1QzNBMUUiIG9wYWNpdHk9Ii43Ii8+PHBhdGggZD0iTTkzIDEzMyBRMTAwIDEzOCAxMDcgMTMzIiBzdHJva2U9IiNCODcwNTAiIHN0cm9rZS13aWR0aD0iMiIgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIi8+PGNpcmNsZSBjeD0iODYiIGN5PSIxMzAiIHI9IjUiIGZpbGw9IiNFODkwNkEiIG9wYWNpdHk9Ii4zIi8+PGNpcmNsZSBjeD0iMTE0IiBjeT0iMTMwIiByPSI1IiBmaWxsPSIjRTg5MDZBIiBvcGFjaXR5PSIuMyIvPjwvc3ZnPg==" alt="Contact"></div>
+        <div class="quick-card-label">Contact</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ANALYSES -->
+<div id="screen-analyses" class="screen">
+  <div class="top-header"><button class="header-menu-btn" onclick="showMenu()"><div class="menu-line"></div><div class="menu-line" style="width:20px"></div><div class="menu-line" style="width:16px"></div></button><span class="header-title">Analyses</span><div style="width:36px"></div></div>
+  <div class="scroll-content">
+    <div class="analyses-header-card">
+      <div class="profile-row-sm">
+        <div class="profile-avatar-sm" id="analyses-avatar"></div>
+        <div><div class="profile-name-sm" id="analyses-name">—</div><div class="profile-sub-sm">Statut Longévité · by Vitalis Data</div></div>
+      </div>
+    </div>
+    <div class="marker-tabs" id="analyses-tabs">
+      <div class="marker-tab active" onclick="selectMarkerTab('Glycémie',this)">Glycémie</div>
+      <div class="marker-tab" onclick="selectMarkerTab('Vitamine D',this)">Vitamine D</div>
+      <div class="marker-tab" onclick="selectMarkerTab('Ferritine',this)">Ferritine</div>
+      <div class="marker-tab" onclick="selectMarkerTab('Cortisol',this)">Cortisol</div>
+    </div>
+    <div class="chart-container">
+      <div class="chart-title" id="analyses-chart-title">La Glycémie</div>
+      <div id="analyses-trend" class="trend-badge stable"><span>💡</span><span class="trend-text" id="analyses-trend-text">Stable</span></div>
+      <div class="chart-canvas-wrap"><canvas id="analyses-chart"></canvas></div>
+      <div class="chart-note" id="analyses-chart-note"></div>
+    </div>
+    <div class="history-section-title"><span style="font-size:18px">🩸</span> Historique de vos bilans</div>
+    <div class="history-grid" id="analyses-history-grid"><div class="loading-wrap" style="grid-column:1/-1"><div class="loading-spinner"></div></div></div>
+    <button class="protocol-btn" id="analyses-protocol-btn" onclick="navigate('protocole')">📋 Protocole Nutritionnel : Glycémie</button>
+  </div>
+</div>
+
+<!-- PROTOCOLE -->
+<div id="screen-protocole" class="screen">
+  <div class="top-header"><button class="header-menu-btn" onclick="showMenu()"><div class="menu-line"></div><div class="menu-line" style="width:20px"></div><div class="menu-line" style="width:16px"></div></button><span class="header-title">Protocole</span><div style="width:36px"></div></div>
+  <div class="scroll-content">
+    <!-- Hero photo -->
+    <div class="protocole-hero">
+      <img src="https://storage.googleapis.com/glide-prod.appspot.com/uploads-v2/OYZTV4tHLhQhmJm6m7ur/pub/SZJjYQlxIskKlzVh6Ddi/burritos-wraps-with-chicken-vegetables-chicken-burrito-mexican-food.jpg" alt="Protocole" onerror="this.style.background='#EDE1D8'">
+      <div class="protocole-hero-overlay"></div>
+      <div class="protocole-hero-text">
+        <div class="protocole-hero-title" id="protocole-hero-title">Voici votre plan optimisé pour les 3 prochains mois</div>
+      </div>
+    </div>
+    <!-- Liste des 6 protocoles -->
+    <div class="protocole-menu-list">
+      <div class="protocole-menu-item" onclick="openProtocoleTheme('nutrition')">
+        <div class="protocole-menu-icon"><img src="https://nakpro.com/cdn/shop/articles/4_7.jpg?v=1763186247&width=1920" alt="Nutrition & Supplémentation" onerror="this.parentNode.style.background='#FDF0EA';this.style.display='none'"></div>
+        <div class="protocole-menu-text">
+          <div class="protocole-menu-title">Nutrition & Supplémentation</div>
+          <div class="protocole-menu-obj">Optimisation de la Glycémie post-prandiale</div>
+        </div>
+        <span class="protocole-menu-arrow">›</span>
+      </div>
+      <div class="protocole-menu-item" onclick="openProtocoleTheme('sommeil')">
+        <div class="protocole-menu-icon"><img src="https://www.elfinview.com/wp-content/uploads/2023/10/Essence-of-Zen.webp" alt="Sommeil & Récupération" onerror="this.parentNode.style.background='#FDF0EA';this.style.display='none'"></div>
+        <div class="protocole-menu-text">
+          <div class="protocole-menu-title">Sommeil & Récupération</div>
+          <div class="protocole-menu-obj">Hygiène de Lumière Bleue</div>
+        </div>
+        <span class="protocole-menu-arrow">›</span>
+      </div>
+      <div class="protocole-menu-item" onclick="openProtocoleTheme('activite')">
+        <div class="protocole-menu-icon"><img src="https://image.made-in-china.com/251f0j00TYfRBCQJualh/made-in-china.jpg" alt="Activité Physique (Longévité)" onerror="this.parentNode.style.background='#FDF0EA';this.style.display='none'"></div>
+        <div class="protocole-menu-text">
+          <div class="protocole-menu-title">Activité Physique (Longévité)</div>
+          <div class="protocole-menu-obj">Entraînement en Zone 2</div>
+        </div>
+        <span class="protocole-menu-arrow">›</span>
+      </div>
+      <div class="protocole-menu-item" onclick="openProtocoleTheme('stress')">
+        <div class="protocole-menu-icon"><img src="https://thumbs.dreamstime.com/b/human-meditate-mind-mental-health-yoga-chakra-spiritual-healing-watercolor-painting-illustration-human-meditate-mind-mental-health-181923953.jpg?w=768" alt="Gestion du Stress" onerror="this.parentNode.style.background='#FDF0EA';this.style.display='none'"></div>
+        <div class="protocole-menu-text">
+          <div class="protocole-menu-title">Gestion du Stress</div>
+          <div class="protocole-menu-obj">Cohérence Cardiaque & Micro-pauses</div>
+        </div>
+        <span class="protocole-menu-arrow">›</span>
+      </div>
+      <div class="protocole-menu-item" onclick="openProtocoleTheme('cardio')">
+        <div class="protocole-menu-icon"><img src="https://blogue.gagneensante.com/content/images/size/w2000/2024/10/nic_g_Augmentez_naturellement_votre_oxyde_nitrique__Aliments__80f9b2f2-791d-4c29-80e4-ac6d9e706c44_1.png" alt="Santé Cardiovasculaire & Souplesse Artérielle" onerror="this.parentNode.style.background='#FDF0EA';this.style.display='none'"></div>
+        <div class="protocole-menu-text">
+          <div class="protocole-menu-title">Santé Cardiovasculaire & Souplesse Artérielle</div>
+          <div class="protocole-menu-obj">Protection Endothéliale & Nitrates</div>
+        </div>
+        <span class="protocole-menu-arrow">›</span>
+      </div>
+      <div class="protocole-menu-item" onclick="openProtocoleTheme('jeune')">
+        <div class="protocole-menu-icon"><img src="https://www.dissolvurol.com/wp-content/uploads/2024/06/illustration-rythme-circadien-1-3.webp" alt="Bonus : Jeûne Intermittent & Autophagie" onerror="this.parentNode.style.background='#FDF0EA';this.style.display='none'"></div>
+        <div class="protocole-menu-text">
+          <div class="protocole-menu-title">Bonus : Jeûne Intermittent & Autophagie</div>
+          <div class="protocole-menu-obj">Rythme Circadien & Repos Digestif</div>
+        </div>
+        <span class="protocole-menu-arrow">›</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 6 PAGES THÉMATIQUES -->
+
+<div id="screen-protocole-nutrition" class="protocole-theme-screen">
+  <div class="protocole-theme-header">
+    <img src="https://nakpro.com/cdn/shop/articles/4_7.jpg?v=1763186247&width=1920" alt="Nutrition & Supplémentation" onerror="this.style.background='#EDE1D8'">
+    <div class="protocole-theme-header-overlay"></div>
+    <button class="protocole-theme-back" onclick="closeProtocoleTheme()">←</button>
+    <div class="protocole-theme-emoji">🥗</div>
+  </div>
+  <div class="scroll-content">
+    <div class="protocole-theme-body">
+      <div class="protocole-theme-obj">Optimisation de la Glycémie post-prandiale</div>
+      <div class="protocole-theme-title">Nutrition & Supplémentation</div>
+      <div class="protocole-theme-text">Pour stabiliser votre énergie, commencez vos repas par les fibres (légumes verts), suivies des protéines, et terminez par les glucides. Cela réduit le pic d'insuline de 30%. Ajoutez 1 gélule d'Omega-3 de qualité supérieure au petit-déjeuner.</div>
+    </div>
+  </div>
+</div>
+<div id="screen-protocole-sommeil" class="protocole-theme-screen">
+  <div class="protocole-theme-header">
+    <img src="https://www.elfinview.com/wp-content/uploads/2023/10/Essence-of-Zen.webp" alt="Sommeil & Récupération" onerror="this.style.background='#EDE1D8'">
+    <div class="protocole-theme-header-overlay"></div>
+    <button class="protocole-theme-back" onclick="closeProtocoleTheme()">←</button>
+    <div class="protocole-theme-emoji">😴</div>
+  </div>
+  <div class="scroll-content">
+    <div class="protocole-theme-body">
+      <div class="protocole-theme-obj">Hygiène de Lumière Bleue</div>
+      <div class="protocole-theme-title">Sommeil & Récupération</div>
+      <div class="protocole-theme-text">Portez vos lunettes de protection contre la lumière bleue dès 20h00. Une exposition réduite le soir permet une sécrétion naturelle de mélatonine. Visez une température de chambre à 18°C pour favoriser le sommeil profond</div>
+    </div>
+  </div>
+</div>
+<div id="screen-protocole-activite" class="protocole-theme-screen">
+  <div class="protocole-theme-header">
+    <img src="https://image.made-in-china.com/251f0j00TYfRBCQJualh/made-in-china.jpg" alt="Activité Physique (Longévité)" onerror="this.style.background='#EDE1D8'">
+    <div class="protocole-theme-header-overlay"></div>
+    <button class="protocole-theme-back" onclick="closeProtocoleTheme()">←</button>
+    <div class="protocole-theme-emoji">🏃</div>
+  </div>
+  <div class="scroll-content">
+    <div class="protocole-theme-body">
+      <div class="protocole-theme-obj">Entraînement en Zone 2</div>
+      <div class="protocole-theme-title">Activité Physique (Longévité)</div>
+      <div class="protocole-theme-text">Réalisez 2 séances de 45 minutes par semaine à une intensité où vous pouvez encore tenir une conversation. C'est le secret pour améliorer la santé de vos mitochondries et votre endurance métabolique</div>
+    </div>
+  </div>
+</div>
+<div id="screen-protocole-stress" class="protocole-theme-screen">
+  <div class="protocole-theme-header">
+    <img src="https://thumbs.dreamstime.com/b/human-meditate-mind-mental-health-yoga-chakra-spiritual-healing-watercolor-painting-illustration-human-meditate-mind-mental-health-181923953.jpg?w=768" alt="Gestion du Stress" onerror="this.style.background='#EDE1D8'">
+    <div class="protocole-theme-header-overlay"></div>
+    <button class="protocole-theme-back" onclick="closeProtocoleTheme()">←</button>
+    <div class="protocole-theme-emoji">🌿</div>
+  </div>
+  <div class="scroll-content">
+    <div class="protocole-theme-body">
+      <div class="protocole-theme-obj">Cohérence Cardiaque & Micro-pauses</div>
+      <div class="protocole-theme-title">Gestion du Stress</div>
+      <div class="protocole-theme-text">Pratiquez la méthode 365 : 3 fois par jour, 6 respirations par minute, pendant 5 minutes. Cette technique régule votre système nerveux autonome et réduit instantanément le taux de cortisol. Intégrez une micro-pause de 2 minutes sans écran toutes les 90 minutes pour préserver votre clarté mentale et votre énergie vitale</div>
+    </div>
+  </div>
+</div>
+<div id="screen-protocole-cardio" class="protocole-theme-screen">
+  <div class="protocole-theme-header">
+    <img src="https://blogue.gagneensante.com/content/images/size/w2000/2024/10/nic_g_Augmentez_naturellement_votre_oxyde_nitrique__Aliments__80f9b2f2-791d-4c29-80e4-ac6d9e706c44_1.png" alt="Santé Cardiovasculaire & Souplesse Artérielle" onerror="this.style.background='#EDE1D8'">
+    <div class="protocole-theme-header-overlay"></div>
+    <button class="protocole-theme-back" onclick="closeProtocoleTheme()">←</button>
+    <div class="protocole-theme-emoji">❤️</div>
+  </div>
+  <div class="scroll-content">
+    <div class="protocole-theme-body">
+      <div class="protocole-theme-obj">Protection Endothéliale & Nitrates</div>
+      <div class="protocole-theme-title">Santé Cardiovasculaire & Souplesse Artérielle</div>
+      <div class="protocole-theme-text">Favorisez les aliments riches en nitrates naturels comme la betterave et la roquette pour booster votre production d'oxyde nitrique, essentiel à la souplesse de vos artères. Complétez par 30 minutes de marche active quotidienne. Une bonne santé vasculaire est le moteur principal de votre vitalité à long terme.</div>
+    </div>
+  </div>
+</div>
+<div id="screen-protocole-jeune" class="protocole-theme-screen">
+  <div class="protocole-theme-header">
+    <img src="https://www.dissolvurol.com/wp-content/uploads/2024/06/illustration-rythme-circadien-1-3.webp" alt="Bonus : Jeûne Intermittent & Autophagie" onerror="this.style.background='#EDE1D8'">
+    <div class="protocole-theme-header-overlay"></div>
+    <button class="protocole-theme-back" onclick="closeProtocoleTheme()">←</button>
+    <div class="protocole-theme-emoji">⏳</div>
+  </div>
+  <div class="scroll-content">
+    <div class="protocole-theme-body">
+      <div class="protocole-theme-obj">Rythme Circadien & Repos Digestif</div>
+      <div class="protocole-theme-title">Bonus : Jeûne Intermittent & Autophagie</div>
+      <div class="protocole-theme-text">Appliquez le protocole 14/10 : laissez 14 heures de repos à votre système digestif entre votre dernier repas du soir et le premier du lendemain. Cela permet d'activer l'autophagie (le recyclage cellulaire). Veillez à bien vous hydrater avec de l'eau ou du thé vert pendant la fenêtre de jeûne.</div>
+    </div>
+  </div>
+</div>
+
+<!-- GRAPHIQUE -->
+<div id="screen-graphique" class="screen">
+  <div class="top-header"><button class="header-menu-btn" onclick="showMenu()"><div class="menu-line"></div><div class="menu-line" style="width:20px"></div><div class="menu-line" style="width:16px"></div></button><span class="header-title">Graphique</span><div style="width:36px"></div></div>
+  <div class="scroll-content">
+    <div class="graphique-list" id="graphique-list"><div class="loading-wrap"><div class="loading-spinner"></div><span class="loading-text">Chargement…</span></div></div>
+  </div>
+</div>
+
+<!-- HISTORIQUE MENU -->
+<div id="screen-historique" class="screen">
+  <div class="top-header"><button class="header-menu-btn" onclick="showMenu()"><div class="menu-line"></div><div class="menu-line" style="width:20px"></div><div class="menu-line" style="width:16px"></div></button><span class="header-title">Mon Historique</span><div style="width:36px"></div></div>
+  <div class="scroll-content">
+    <div class="historique-banner">
+      <span class="historique-banner-icon">📋</span>
+      <span class="historique-banner-text">Mon Historique Digitalisé</span>
+    </div>
+    <div class="historique-grid">
+      <div class="historique-cat-card" onclick="openHistoriqueSection('ordonnances')">
+        <div class="historique-cat-circle"><img src="data:image/jpeg;base64,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" alt="Ordonnances"></div>
+        <div class="historique-cat-label">Ordonnances</div>
+      </div>
+      <div class="historique-cat-card" onclick="openHistoriqueSection('analyses')">
+        <div class="historique-cat-circle"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4gxYSUNDX1BST0ZJTEUAAQEAAAxITGlubwIQAABtbnRyUkdCIFhZWiAHzgACAAkABgAxAABhY3NwTVNGVAAAAABJRUMgc1JHQgAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLUhQICAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFjcHJ0AAABUAAAADNkZXNjAAABhAAAAGx3dHB0AAAB8AAAABRia3B0AAACBAAAABRyWFlaAAACGAAAABRnWFlaAAACLAAAABRiWFlaAAACQAAAABRkbW5kAAACVAAAAHBkbWRkAAACxAAAAIh2dWVkAAADTAAAAIZ2aWV3AAAD1AAAACRsdW1pAAAD+AAAABRtZWFzAAAEDAAAACR0ZWNoAAAEMAAAAAxyVFJDAAAEPAAACAxnVFJDAAAEPAAACAxiVFJDAAAEPAAACAx0ZXh0AAAAAENvcHlyaWdodCAoYykgMTk5OCBIZXdsZXR0LVBhY2thcmQgQ29tcGFueQAAZGVzYwAAAAAAAAASc1JHQiBJRUM2MTk2Ni0yLjEAAAAAAAAAAAAAABJzUkdCIElFQzYxOTY2LTIuMQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWFlaIAAAAAAAAPNRAAEAAAABFsxYWVogAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z2Rlc2MAAAAAAAAAFklFQyBodHRwOi8vd3d3LmllYy5jaAAAAAAAAAAAAAAAFklFQyBodHRwOi8vd3d3LmllYy5jaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABkZXNjAAAAAAAAAC5JRUMgNjE5NjYtMi4xIERlZmF1bHQgUkdCIGNvbG91ciBzcGFjZSAtIHNSR0IAAAAAAAAAAAAAAC5JRUMgNjE5NjYtMi4xIERlZmF1bHQgUkdCIGNvbG91ciBzcGFjZSAtIHNSR0IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZGVzYwAAAAAAAAAsUmVmZXJlbmNlIFZpZXdpbmcgQ29uZGl0aW9uIGluIElFQzYxOTY2LTIuMQAAAAAAAAAAAAAALFJlZmVyZW5jZSBWaWV3aW5nIENvbmRpdGlvbiBpbiBJRUM2MTk2Ni0yLjEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHZpZXcAAAAAABOk/gAUXy4AEM8UAAPtzAAEEwsAA1yeAAAAAVhZWiAAAAAAAEwJVgBQAAAAVx/nbWVhcwAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAo8AAAACc2lnIAAAAABDUlQgY3VydgAAAAAAAAQAAAAABQAKAA8AFAAZAB4AIwAoAC0AMgA3ADsAQABFAEoATwBUAFkAXgBjAGgAbQByAHcAfACBAIYAiwCQAJUAmgCfAKQAqQCuALIAtwC8AMEAxgDLANAA1QDbAOAA5QDrAPAA9gD7AQEBBwENARMBGQEfASUBKwEyATgBPgFFAUwBUgFZAWABZwFuAXUBfAGDAYsBkgGaAaEBqQGxAbkBwQHJAdEB2QHhAekB8gH6AgMCDAIUAh0CJgIvAjgCQQJLAlQCXQJnAnECegKEAo4CmAKiAqwCtgLBAssC1QLgAusC9QMAAwsDFgMhAy0DOANDA08DWgNmA3IDfgOKA5YDogOuA7oDxwPTA+AD7AP5BAYEEwQgBC0EOwRIBFUEYwRxBH4EjASaBKgEtgTEBNME4QTwBP4FDQUcBSsFOgVJBVgFZwV3BYYFlgWmBbUFxQXVBeUF9gYGBhYGJwY3BkgGWQZqBnsGjAadBq8GwAbRBuMG9QcHBxkHKwc9B08HYQd0B4YHmQesB78H0gflB/gICwgfCDIIRghaCG4IggiWCKoIvgjSCOcI+wkQCSUJOglPCWQJeQmPCaQJugnPCeUJ+woRCicKPQpUCmoKgQqYCq4KxQrcCvMLCwsiCzkLUQtpC4ALmAuwC8gL4Qv5DBIMKgxDDFwMdQyODKcMwAzZDPMNDQ0mDUANWg10DY4NqQ3DDd4N+A4TDi4OSQ5kDn8Omw62DtIO7g8JDyUPQQ9eD3oPlg+zD88P7BAJECYQQxBhEH4QmxC5ENcQ9RETETERTxFtEYwRqhHJEegSBxImEkUSZBKEEqMSwxLjEwMTIxNDE2MTgxOkE8UT5RQGFCcUSRRqFIsUrRTOFPAVEhU0FVYVeBWbFb0V4BYDFiYWSRZsFo8WshbWFvoXHRdBF2UXiReuF9IX9xgbGEAYZRiKGK8Y1Rj6GSAZRRlrGZEZtxndGgQaKhpRGncanhrFGuwbFBs7G2MbihuyG9ocAhwqHFIcexyjHMwc9R0eHUcdcB2ZHcMd7B4WHkAeah6UHr4e6R8THz4faR+UH78f6iAVIEEgbCCYIMQg8CEcIUghdSGhIc4h+yInIlUigiKvIt0jCiM4I2YjlCPCI/AkHyRNJHwkqyTaJQklOCVoJZclxyX3JicmVyaHJrcm6CcYJ0kneierJ9woDSg/KHEooijUKQYpOClrKZ0p0CoCKjUqaCqbKs8rAis2K2krnSvRLAUsOSxuLKIs1y0MLUEtdi2rLeEuFi5MLoIuty7uLyQvWi+RL8cv/jA1MGwwpDDbMRIxSjGCMbox8jIqMmMymzLUMw0zRjN/M7gz8TQrNGU0njTYNRM1TTWHNcI1/TY3NnI2rjbpNyQ3YDecN9c4FDhQOIw4yDkFOUI5fzm8Ofk6Njp0OrI67zstO2s7qjvoPCc8ZTykPOM9Ij1hPaE94D4gPmA+oD7gPyE/YT+iP+JAI0BkQKZA50EpQWpBrEHuQjBCckK1QvdDOkN9Q8BEA0RHRIpEzkUSRVVFmkXeRiJGZ0arRvBHNUd7R8BIBUhLSJFI10kdSWNJqUnwSjdKfUrESwxLU0uaS+JMKkxyTLpNAk1KTZNN3E4lTm5Ot08AT0lPk0/dUCdQcVC7UQZRUFGbUeZSMVJ8UsdTE1NfU6pT9lRCVI9U21UoVXVVwlYPVlxWqVb3V0RXklfgWC9YfVjLWRpZaVm4WgdaVlqmWvVbRVuVW+VcNVyGXNZdJ114XcleGl5sXr1fD19hX7NgBWBXYKpg/GFPYaJh9WJJYpxi8GNDY5dj62RAZJRk6WU9ZZJl52Y9ZpJm6Gc9Z5Nn6Wg/aJZo7GlDaZpp8WpIap9q92tPa6dr/2xXbK9tCG1gbbluEm5rbsRvHm94b9FwK3CGcOBxOnGVcfByS3KmcwFzXXO4dBR0cHTMdSh1hXXhdj52m3b4d1Z3s3gReG54zHkqeYl553pGeqV7BHtje8J8IXyBfOF9QX2hfgF+Yn7CfyN/hH/lgEeAqIEKgWuBzYIwgpKC9INXg7qEHYSAhOOFR4Wrhg6GcobXhzuHn4gEiGmIzokziZmJ/opkisqLMIuWi/yMY4zKjTGNmI3/jmaOzo82j56QBpBukNaRP5GokhGSepLjk02TtpQglIqU9JVflcmWNJaflwqXdZfgmEyYuJkkmZCZ/JpomtWbQpuvnByciZz3nWSd0p5Anq6fHZ+Ln/qgaaDYoUehtqImopajBqN2o+akVqTHpTilqaYapoum/adup+CoUqjEqTepqaocqo+rAqt1q+msXKzQrUStuK4trqGvFq+LsACwdbDqsWCx1rJLssKzOLOutCW0nLUTtYq2AbZ5tvC3aLfguFm40blKucK6O7q1uy67p7whvJu9Fb2Pvgq+hL7/v3q/9cBwwOzBZ8Hjwl/C28NYw9TEUcTOxUvFyMZGxsPHQce/yD3IvMk6ybnKOMq3yzbLtsw1zLXNNc21zjbOts83z7jQOdC60TzRvtI/0sHTRNPG1EnUy9VO1dHWVdbY11zX4Nhk2OjZbNnx2nba+9uA3AXcit0Q3ZbeHN6i3ynfr+A24L3hROHM4lPi2+Nj4+vkc+T85YTmDeaW5x/nqegy6LzpRunQ6lvq5etw6/vshu0R7ZzuKO6070DvzPBY8OXxcvH/8ozzGfOn9DT0wvVQ9d72bfb794r4Gfio+Tj5x/pX+uf7d/wH/Jj9Kf26/kv+3P9t////2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAEsASwDASIAAhEBAxEB/8QAGwAAAgMBAQEAAAAAAAAAAAAAAQIAAwQFBgf/xABAEAABBAECAwYDBQYFAwUBAAABAAIDEQQSIQUxQRMiMlFhcQYUgSNCkaHBFSQzUnKxB1OCktEWNEMlNURi4fH/xAAZAQADAQEBAAAAAAAAAAAAAAAAAwQBAgX/xAAyEQACAgEDAwMDAgYBBQAAAAAAAQIRAxIhMQQyQRMiM1GBoRQjQ1JhcZHwJEKxwdHh/9oADAMBAAIRAxEAPwDaAUwGycBENXrngUKEQE1IgLALMcd5bHeBZoB3lrcO4pc3eizD2MwOHeKCdw7yFKpcEj5FRRpEBBgApSYBENQAKUpMAjSDQxjvLSBsqIxutCRl5Lem7WZHjvFKrXjvFLScuCSXcxQEUaRQYhVE1KUg0RBOUKQYPF4lpcO6qIR3lpeO4VNm7kV4e1mBw7xQTu5lKqVwSvkUhLSsQpaYV0lVhCWkGCFKrDySrTAMHeWmtlQwd5aa2SMnJZ03DMUviVWyvmA1KpOjwST7mOmShFaYMEUAEVgF0HiWx3gWPH8S1u8Cly96K8PYzE7xFQIO8RQCqXBK+RkQlCYckGBCYJQig0YKIBFBo8fiWgLNH4lovZIyclfT9rKH+IpUXVZSpy4JZchCnJC1EGDIIKFBtkUUQWmWWw+JaX+BZYfEtL/ApcveirF2Mxnmh0RcdykVKJWyWhahSlaZZLQtAlLZW0c2G0L2QvdBaFjx+JaeizR+Jab2SMvJZ03azJMe+VT9VbL4iqk2PBLPuZaKTCkgaiGrCrRAcVSIpKAjSzczRAuiIDlpLxpKxxssq50Z080jJ3FGOMdOxWatSgk00eaIBT1Yh44D0AiAEoaoAi2HpwHACOySijpPmi2HpwH2U2SaSpoN80WCxwLGkAqTZUUERklcGsHUqvQbXA+KpTFi47L8Tyfwr/lbixrLkUH5OpyWLDKceTVP8Q4zSezY556E7BZh8RnWdUQDKvY2V5Pt7B36KGU9/wBgvaj0eJKqPCebM3dnqf8AqKa/4UdafXmnZ8R9y3xAv6AHY/8AC8oZjbv6UvbEV/Suv0uJ+DlZM38x7SH4ixnkCVjo9rJ5hdSDIhyo+0hkD2+nRfM/mSP9q9D8J5Jkzp47O8d/gR/ypuo6SEYOcfBX0+Sbmoz4PYUpSABpCivLs9H04fUuhABV7yNJWSNrr2VrmO0pE17imEIqJUQLSkBAtdvuhR809CHigGglICBB80Kd5rTPSgQtCUtCNHzS0fNbZz6UPqHShpFKb0gLtFh6UB2AAq3WKWeieSbekufJThhFJ0LJRJNqjU31VjmkghVdl/8AYrtPYnlig3yXhEBRGlpLYQoiAoBSA3LYB3lpcO4VngHeWp3gKly96K8XYzC7xFQJiNyoAqlwSuwBMEQNkwCAVgCgTUogBUUaUpAbhZzXk/jV9ZOIzyY4/n/+L1rB3l5T4ub2nEoboBsI3PXcp3SL/kI3NKund/0PJMvf2Cu0uIfsei29k2JoJrflSYSNH3h+K9rWjyHl+iMJY/U7Y8kjmOsf0rpB7CfEfxCjqI2df1CNaOVla8HFcHV/oXc+EHEcbcPOJ36KibFpge4Np3ULb8MxCPjTXDcOjcAR7JeeSeKX9inFlTaPa81EaUpeGX2yyHxLQ8d1Uwc1ok8Cmyd6K8XYzC7mlTnmlpUokbYhQJTEIUtMtibpU5CWlpjbE3UKakCEGWwxDvLSWiuSpiHeV55JGTku6ftZik8Sq3V0niKqpOXBHNuy4JgkCYHdBgw2UtC7RCDS+DxLS7wlZYD3lqce4VLl70V4uxmM81AVCdyoFSiR8jAprSApkGjKIWggBrUSjmjyQCHj8SmXg42bHpyIWSAcieY9ipH4lo6JUm1JNFeFJwae553K4XjukELQWta0NBaBdLLN8NxhltyXgnzaF25W/vRPonkFtVEc81wyOXT45W2jzI+Gyf8A5R/2J2/DgG7slx36NXeDU1d1MfU5PqKj02P6HMbwnHj0ROt4fYJd7Lbh8LxMDeGOn1WomyrnNueI+Vq4hK9Wcluxjwwi9kS1EFFyaXQ81fJ4FRBzV0nhU2T5EV4/jZkJ3SolKVSiRgtC0Uq0wBKCilrTAII2gUAPGe8rzyWeLxK93JJyclvT9jMcnMqu/RPJ4iq/onLgik9ywFMCkBRtAFgKNpAdkbQBfAe8tTj3CssHNan+AqTL3orxdjMZO5UQPNQKpEo4KYKsGk4QCGUQtS1hoQohai0C2LxLQeSzR+JaTySMnJZ0/azDIP3j6BM8KPH7wfYIvXS5FvhlYGyJGwTgI1sF02cJCkDtWfVElMf4jfYpUQDIiII0guxRdBzVsnhVUCslPdUs/kKofGZDzS2mKVVIlYEEbS2tMAgiggwBQRKFoMHh5q93JUReJXOOyTPuLsHYzG/xFInf4ikTkQy5CBsiFAmAQGxAEaRARpAF2MN1qf4Cs+PzWmTwFSZe9FuL42YTzUAUPMohVEhEQVFEAG1NyoAmApACgJkaRQA0XiWmtlnj2ctNbJGTku6fsZkf/wBwfYJnjf6KOH259grWloeS4CtJG461sts4atFICYBa9WOdOrSRVUOg89hzVcjmO0BgArnSzVYKKXkoo6x/SUqsIt9k/dKr6ruAvLyBKU1oLsSWQc1ZL4UsA3TzDuqaXyFUPjMRKChQNqsksiCKCDAIFGlKQAiCekKQCGi5q13IquIbq1w7qTPuLcPxsxP8RSp3jcpfonLgifIQU4KqAKYbdEGIttEFILpEWgDVBzWiQ9xZce7K0SeFSZPkRZj+MyHmohvZUFqokHFI7JAm+iDRuSIKS1LQBYCFAkRtAF0fiV/RZovEtBNBJyclvTv2MkDGyZ7GuFg8x9F1hi4/WFpXLxR/6jH7foV2EjI3Y7Ek07K/lMb/ACWpDjY4G0QCvKRy41P6jNMfocvJY1s7g0UA3ksi2ZX8eTb7qwFyrxdpB1G0hkEupTUmk9mmBPN4VXAU03hKll8hXF/tGMpUxSqsjAVFFEGEUQtBABQKFoWgC6HmrXeFUxc1a87JM+4vw/GzG8blIncd1WU9EEuTRpamDWrE2U+asEpSvTkdKaNgaEQ1qyiYphKVmiRuqJtiAHJWuApZYHklXSOIap5J66KYP2WIWNvkiGBZ+2NlETFUaZE+qJo0BHs2rOJimExRpkGqJdoCnZhVCZTtkaZBcS7swp2YVXbKdsjTI24mhjACrCzZZo5bNK8v7qTNSspxduxdjD9/Z6D9F1lycU/v7Pb9F1glT5KcXaAqtytKqcuRhzsizNKOmlZDEtc+0szvJoWTtgqceqtiDPWrcHYqdij2wQ7YLv3iPaWxR0E0rLCWKSxsjLIAEh3rKFWgz9ih2Kftgh2wVFzJ/aJ2KHYlP2zVO1ajVIKiVGIodkfVXdoEO0CNUjNMSnsih2RV3atQMrfNGqRtRBHGQVY5mxQZICVY5wpKlJ6irH2bGF0RtL2J9VoMjbQ7Rvmm65ErirOU0pwq2g+asCoZKhmlWApAmCw6RsxlfL4CqMVXzeAqOfyF2P4jF1RCigVZGEIjkgE1oACKCKDURToiggCyHxLSeRWeEd5aCO6kZOS7p+xmrE/75n9P6LrBcrEH7+3+n9F1VNk5KcXaQqpytKqcuBhzcnxZHsFzTsulk88j6LnEK3D2nm9T3CKWilTSY1Y52UnOymONlMgd1S/xStfEZLS2oUKVZHZAUbQHNRAINqWogUGikpSUyUoMLoCbVzz3SqIBurX+EpE+4vw/EzI4myltF3iKVPRA+Skck4Shp8inAK6OEhgmahpNWi0dbWHRrxldN4SqcdzRtqCulFsO6kkv3CyHxGPqiFKtTkqiQgVkUbpXaWCyqnPa3mCt3DJmibUK+q5k6VncIqUqZP2dk/5aU4U7ecZXpWZbK30qwTxO+6Cpf1MvKL/0UHwzyRglbzY4fRAtI5ghewvHdzaEPl8V/wBwLV1S8o5/QvwzykI7yvdyK9EeG4h3AASO4RjuunUuZZot2Ox4JQi0cvEH783+j9F1Flgia3Jl82HSFp6pcnbGQVIhVblYVU5cnRzsm/t/oueQuhO0ntwN9xyWAtI5gj3VmHtPO6juEpCk1IJxNRpx/CpkeFSDwqT8lL/FK/4RjIQpMgqiMFKEKKLQIAgQj5pbWGinklpMULWmFkI3Vzx3Sqoeatf4SkT7i/F8TMTh3ihSLjulv1TyB1Zlbl5BkAdhmNvVznBXxSRue4OcwHn4xyVORj4z4XamSyUNmsdRP4rBj4kEspvhOS0BuznS/wDC7qLX+/8AsTc0/r/v9EdpskMgLWSscfRwQign3t8ZHkFz24jsFrpcXhxMldXF3T0QhyOJskbo4WLeNT9LXc/dZovtZ1r/AJl/3Oh8tkh2psrGgeiRj8iUEDMFtO47MhNiScZfkgTYDYoCa1vvYeu62PlyWz6HQRdlVueJKI+iU7T3r8DYxTV7r/JhmzGQua0lxPWm3aT9r44aHdnKQTXhW8u9Gge4VDsed8wkbkFrB9xumkxafKFNTvZ/j/6XkxfLid0btJHICz+CjMeGQBwdI2+g2Kzz4LpmlvzJZf3uqzN4K/V/7g7lXI/8rFGLXNHTnNPaNnV7JjHAN7V48zItDcrIx2/YQBx6anLlcMGNjSSB2VPlHSWnWC0A9CLS5GQzGymSdplEPcGtjDhpv6rh47dcjVncY6uDoR8V+IHvN4GMB6yrXj8S4g43McJjOpbLdfkvPSfEMDGEmGQ/ULfw2eLNgfLDjvDWiyDQ61/dZLBStxo6x9VqdKTf+/2O7Lx7h2KwHIz4mH3SM+LODnlxOH8V59+RwyXLONPgukkaa3j1AfguizA4dHdcOxj/AKEp4cceU/wUw6nJO9LX5OxizslncWvBDxrbXUea2LlYj9GV4A1oZQA6LacqNrqJA9yFPKO+xVCW25eVW7mkGSx11uldMwC7H4rmmdakXDs2AP0izzKmuF3OMLm5XEMaJn2sukE7UCVw8z4w4RhSGN8mQ5w6NiP6ldxxZJdqZy82NbNo9dHjYczqcwK88DwHDbUPqvno/wAROHRuuOHMd/paP7lOf8UtI+y4bK/y1yNH9gmrpup8Ji3m6bzR9AbwHEA2lkaufxXhTcbGM0UpeGnvBwXkov8AEjOmniYOFMjbI9rdTnuPM+wXr8/IMmDMCen6rl48uOa1+Q1YcmOWjwefNm0lJ0FYeYKhaKC0wloWogSgAEpCmKQ7FBjL4OqtkPdVMJ5p5PAUiXcX4fiZjc6iUmoKOO6SyqUtjzZPctxxkv4eMhzcdriD3C6nbeidkzgwFwDT5Lj5UHEJANLyN+myWfDychsbWyHYd83S60p8s49RrZJnc+bDR/FaPqsEpdPPbuKyRsvwtcKC5ruBvI2nffqUrPh95PeyNvqulGC8mOeR7NHfIwCxwGdK48rc8Db1WF/CsKWR4jzWnWK33pCPgmK0AND6reza6/CY8ThORHK7DjyAw7tk6pTnp7Wxqx69pxSX3OOOBYbtpMx2w2poXUxnY2BiiJrGygOvUbs7EVt+K2v4nGeJnMZg47Rr1CKrb7LLlZBy8l8xhjZqdemMUAhzlLuNWOEN4cnLxcqGHIfjxNne43Zcb5Kl/wARta8tbjuPu5dFuO0OLmxDUeZ81fjYEOvU7GZ/tXeuC3aFRx5Hsmc6HjOU5hliwX0N9QtTH4vn5Mt/KRahuC5pP916mOKJrKGMKHpsrRE5w7mMPwSHnh4iVx6TI+Z/g5XDcDN4gCHR4cXX7RzWgLVDh5DnPjflYsbWAnxAXXQbbrScPKJsQNH4Jhw/K66B9Ul5WyiPTpLycnIgyC2UQzFrjs3cAD9Vim4bnz4zI/nXNeCS52s7+QXon4EjfFICPQFQYO1l7j7NWrO1wZLpVLm/8nAh+HiXAOz8hzj1PJNF8HiPI7Z+WXnVqrTzXosfHZ2tW62rZ2I35ofU5OLCPQ4edP5ZzcbEEDrdBFMK5OcQPyUbA9usGOAB3UhxLfbddLsmDc3+KVzW9GgJOpspUKOVJhRGIte3X1tywjg+CZO0+Shc8G9RZZ/Ndec1GSOdrIXnzK1Ta8mOEbui3E4Z2rtIgiDRuS5oDR+K3fsZhNtfHqvYhlbei5YeQbs2tWPlS9owdo4ixsSuG2dRUfoDiXw3LmshByI2iKUSb2bpXZw0YkgsH/8Aq3yymua5vECThSVz2/uiEm2kwnCMYya8o5FoWqyHhJ9orzyy60LVNyKW+lphYSgVVqegXvHRBhYlKpdM8dEnbv8A5QtSMbN0Csk8JWOHIP8AKnkyDpOyRJe4uxSXpFLuarPNVuyHWe6q/mT/ACqlI82UlZ3G8Knd4pWD6onhgaDqyWArhRZHFmzgSxjT13XRhnkkkcHR6WjkTzK4lCS8jYZYS/6WbhgYzW97LBPoqTBA0nS4kDraD26mENO56gJOGNHD3Pc9hncTYLzyXCuuTu1aVGjVhMIBDyT6qHL4YBVA35uVE8UWVO+Z8LWAm6B2Cpx8DCyy75aHtSxwBLATRKFGPmw1z4ikdAywMaCMaMA8rKInobQxD6Ll5DgJI4XscNDjQO1EearHFHhtnFl50KC7WNtbHDzU9zuYgmzS8sLYtO16VhlyeIw5BZEDIAaPe2ROZFBhmeR7mCrLRzWjGkjma2SM21wsWuKrdoYnqqKdMqdxHirGWMPWPR4TYHFMieYjIxXw+pK1Ns5I7Rx7GuTeaz8TxmZTyyCZ8TK5jml+17UPqcd02/6bHYZljkx4/FM7KcBuPwXk8f4diDrPEcoOPUOTScGyo5Wux+L5BA6O3XPpQ/m/B2s+RLeP5PYx5DHNAePxWgdk5uxC8s3jmNgRBmZlR6gasmloi+IeFSju50A/1Jbwy8IdHPDyzpRkDIl36q4mQ7scVzxPHr1B4pwBab5rZFMQ3cWPRcyTO4SRCZeriqZdfVxWkTMd/wAKiVwdtsuUdMpksxUsbhS3PoM3WVwB5ELTKKOqvxt52e4VRatOGy5WnyKwEjpS81mmGqIgrTLzWeTwFEO5Bk7WYjC3ySnHZ5LRSlK2zzqMvy7FPl2rRpQpaZRm+WYlOK1aqQpFhRjOE02kOA09VupCiizKRjbgNvmEX4IIW1jUXjZc3uNS9pyDw4X0Q/Z49F0qS16Lu2I0ow58HaQs+UzgXFn2hLQ3S70XLbwfPkLa4gbDaNOO63zkwwSSMiD3AbN8ys3CJM3Kke7KmEEek02OIVqrlufOkyLcY2hMlGU6YmFhZuHM57sxsw3GlxJC1QPytUpnLXBzrY1ra0hac7DE8bWQZTt46fqod7rVdFy2/DRd2WrKPcbQpxvna1NS3k/wZplF1Ffk6sbTJsW2DtutOOHcPjezGIiDzZDDzIXDx+Ay4WUJ25bRpcCC7Uev4K0R8Q/aIk+aL4BzaB4t/KvzS5QTez2GwySXMdzoGSVziXFpcTZJCpZlulzm4UQdJO7amsFD6q3vn/xv/wBqUY/2naBmlw6l4BWqgeooyXT9nIOxc9wbYaRsfwWaOXizSCzEYBXW11w+Ub9rQ8rtFksj3/xzXkGhGqlwZ6du7aMuDl5j5HfOYbmgA0GA3f1Q/aYdxT5IYkosAh56D1XQgzBmam4+PJJ2btDnt2BN11WTPys3HkZHBjNc8v0vBPhHXe0uk3VfkdbjG1Jv7GzszRo0rMR4xMZ8HZRO1AjtD4ua8+/O4yWOc2CCug0k9fRa8bNyhjk5GJqkrYRsIA/FHoySOl1EG+GvsXS8P4dK4vmxmPdd7lQcK4PKDr4b9QaXPb8SBvEDiTYhYdqLHXz9F3ywkc0S1x5DGsU70q/sK+OHQIwwhjWgMF8h0SfPxYQ0SSV0oglNGwxv3IcKDdxuAo+KN794g76pVLyOtrtJHxbEkdXam/6CnbkxyO7kgKSOHE1W7EN+hUlghJL4hRHOisqPg1Sl5LcmQ9iCPRc52Q4Hcfghn50OLAx0rn0DtTV5vK+K8WKXs48SeV3SnNaP1XUMEpcIx543pvc9jhZEDn1Lt/UF14zET9nprzG6+ax/EXF5TpwuBEk8nPc539qCSXP+MnyAMxmY5P8AlsaK+pJXT6WT5aX3Oo9QkfTpeazvNgr5nkS/FME2K/iPEJtEszWaWzeo6BfSAe7ulyw+m1vdnXq64y2IhSKBKaSkpClLUWgCkKRUQYLSFJkEGhaEHhFqjlz5O/BSQpSKC6FGPtZpC5z8hve/lFpKjAOp5Ps1cN2Hm42NoZkNAHRriulw7fHrJt7wOYNJrikrTJ45JSdNUaWmBtkNJ9ysbOLvdn/K4sDWgGjK8mvotmqJt0xv1WcSY0UpeCxrvMEBYq+h029qdHWkjf2D2uzGPc0imtYSD+S4ORw/iUs0pGZKGubTQHVX5rUc+LmMkAe60RzfMOHYPLr5AC7WRbgdSUcm1/k4juC8S093KmcfLtav+66OJj50ENP0k399weeR6rrQRStldE9lyu7rWHmD7LJk474ZXMmc8PBotIXTyuWzOVgUd1ZzeFS5k3aMzWadJoOIolbx3XECj7lc5h4ic9wbDWMD1FErCeH8dyJ3askRsJ/zP+F24KTttIXCbSpJs9HABA4uaQAeYrb80ZM+MOp80ekc9wuPD8MzvafmOIc+jSStWN8L4uO6xkSvPKy0AJMliXMr+xRGWdr2xr7nTiyA8/ZP1eWy0ntCzSI3h/M73+S0cMa3hjbhmaDVW5gd/dMMp0T3uhmeHPBDizawUi7exVTS9xxsibsY3zGNsskYtoqysU/E+MvxWOx8CpXONjSXUOi79Uf4ZBPmnDJD91o9ymqUVyrEOE3w6PNxRcdmoyzGEnmBGwfqq4uC8Vkn7TJ4iXNvw6nHZelLCSbIsbJxjgg942t9drhL/Bz+mT5bf3MmFAzEP2kbJxVU8mvyK0MlbE14bFF3vNt17WmGM0Gyb90XNDRYAHsElux8I1sjHLBDLGQ+JjxzotsLOzGa0dyFjfZoat85+z+qyXusUmMcFZdBDGLdNM1jR0b3nH26LZix4Uh0Hez97mVzSVZjGp2b9Vw9xkUkdDM4Hwufs3SxueYnh7BqIAI5HZRwHTkrZXm1UN7XMW7VnU0lF0IhSelKVNkVCUgnpCltmCIKykKRYUVqJ6QpaAGqOCdoQcFx5O/BQpSspCl2Lo8vnz5EcQ+WhLnE72Fnyf2pLBGIY9Dq7xul6JuFku+4R77Jv2c8+JzR7lNWSKJ5YZyfk8h+yuKzD7ScM87cmbwAAfb5pP8ASCV635OGIW6ZgWfJyeH4jdUswq+a6WeT2Rx+mS3kzmYfB8OMEgyvsczsuzhn9nuY/GZpczwkm6XOm+KuD4lAQySmr2GxWd3xxiNAMWIQPMjkuJRyT5Q3G8UFaf8Ag778vOmyjkhx7YnVqDeqR0ObkPMkjnucTZJ6rJjcbm4jjCWGTSw9NNJX5E33pnn6rhRa8HeuL3ts1P4Zrdc0rWV/NJSR0/DcQESZ8AI6A2uZkxNyYiwuIvre6oxvh/ClJ7UvK7pV7mLUnqqETuN41wrutjyQ5589gtbMyI0AwOvrqXmMn4c4W0gMDh9VccmLE0RtcABsLKTKEX2lUMkl30eobMANo2V6BWR5gLq2H0Xn4OLxPY4Nmjsc+8rRK+TS/W0tPUFL9Njlmj4PVs0St7wB9UsnDQ8XDJR8lyoJ3sHcffoVrbnkDvW0pVSXA/2SW5S1n2ssbzuOvsnYSLB6dVTrudzw5o1G7PVbWRteynAe7Su9Vci9F8FVhVyHu/VO+PQ7uv1DyIVcnhG3VbZxTsonP2f1WUc1qyP4RPqsYO658HfkYqzGH27D6qolaMTeVnuss6R0JfElZuSml8SWPmfZZHk2faxqQpMgnkgKQpFArQAgiggwCCKC1GBCDlAgVnk68CoKILs4PD43xdxKfMbBNE5gcaJY3ku2HPeLdLI73cuRJnQxvc5xjbzJN1yWT/qLDc1xblsAbVqn00+FRD6rf9T0JDQLr8Vjyo8fKi7OYjSudj8Qizjpiydbv5QaK0txpCdmX7laoaeRcsje1GvFweGgi4g+vqtOZj4Oim4jdNcqCzwQPZzIAQ4ngyZmCYop3RuO9hJk/dyUQX7b2M0nF4MJvZ1FE0dLVJ43jSAO+ajNnkFmPw03JDBkzkuAolqvPwjw+GIFsrtRHMG6T/20KUZOO/8A4N0GR8zHcLmPA5kFaoRN1dQXM4VgYnBxITPqe87kn9F0mZsL3UzU72C4mvodY2r3Y8rL5vJK89l8Gysx2l0w8Wzr5BegdKT/AOMj3VYcRuWA/VLjJx4HSipPc4kXwUIWuk+bt3XdWcNw38MyXufkukbvTb2XY1veDTKXNzQ+GJ0nZl1HkP7pkJSltJis3t3idiDicQNB5J8hutn7Q1toROI9dl89mfx187m4LX6CPEG1X1V0E/xJjR9+d0kg3EbQHH6rmeBN7MdizyULkz3sUplhcC3Tpd59Ct+PKYgK3FbheY+HOIZ/EPmG58QaXN2Ibps+y7cEhawNJsjb3U2SFOirFktakdcZO2xtUySdo8bBYnTNG4cAfJPG8uNpOmijXY+U1oxtWrvaqr0XP1boy5jJHOZfIpO6eqxp0FocuWrCNzN91hIPQLbgX27bFLk6R0pfEUI+Z9kZfEq2u07lbDkMnay5AlUumA6ql2SB1VKRG2jXYQtYDljzQ+bHmt0makb0trG3LB6q1swcigsuQQDwUbQBAoUeSB5Lk68CIIpV2cHznG+HHzYogzMkNt12AStTfgzhEWKZn5crnaqqwPyXUYwaN9087WRY2tsbdRKplOV8kcJUmeexOC4+FnjJa98hZegVVLr/ADLh0pZ5pXamVQ1E3+C8qzj+W/JewshoMcR3TzA90ytW7E++T2Z7eOZzjZeKWozd3mvMfDvEpuIZQinZHR6tBB/uvWdhE0bMH1JSMiSlQ/Hq0mMyGzZtK8a2btJHqtUjQxhLQAs0bnPG7juOS6QuVLZnnpuJyyjIbiQdlJEaGptlyxY83xTPkNfG2Vu42cwNZ+a9Z2TItUkY0vI3IWvHmdraHU4VyPVdyyJLg3CqdHkH8U+IsHSZYpJHOdQa+HYnyFL2+Ox0mJFJLEI5HMBcy70nyUL7qwDXUpe3fZ5JE5KXCoqiq5H7IUbNLLLCKIVvbPfYJr2Svha4W4uPuVkXRzkSaFw3Phcajbp9W7K6aY9mO4xtci1oCztiYDYCdwBCGk3ZuNtQoy4Tux4nFICdJdRF9DsuplTR4xdrfpAK408YfDINTga2LTRC25kYnyXMeTTiCa9gtmraZzik1FpGiDLxX6tMm49FtbIGwuffRc1uDExhLS8V6qjiRLuFiPUQHSsaaO9ar/RKcU3RRGbUW2NJI1xKqEr2G2u28jyVzmh7XEjf0WUndbKKOYTbOph5rdVTNr15hd/GZG9naNI9KXlcc0SPS1n41xXJ4HjHIwy0PI+9ZH4ApDhb2KoZKW57WXmsGbIWRAj+ZfLMT4149xXi2KybNMcT52NdHC0MBGobef5r6bnH93b/AFLr0nCSs3JO4OjN8y89VWZSeqrSkqijz7HLiUNz5pASCr4jfNAIVjXrXFqCsYxtcle1gXNnSQGEq9pStATBcsYhgoVECuTtcCoIE7qWujg//9k=" alt="Analyses"></div>
+        <div class="historique-cat-label">Analyses</div>
+      </div>
+      <div class="historique-cat-card" onclick="openHistoriqueSection('imagerie')">
+        <div class="historique-cat-circle"><img src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4gxYSUNDX1BST0ZJTEUAAQEAAAxITGlubwIQAABtbnRyUkdCIFhZWiAHzgACAAkABgAxAABhY3NwTVNGVAAAAABJRUMgc1JHQgAAAAAAAAAAAAAAAAAA9tYAAQAAAADTLUhQICAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABFjcHJ0AAABUAAAADNkZXNjAAABhAAAAGx3dHB0AAAB8AAAABRia3B0AAACBAAAABRyWFlaAAACGAAAABRnWFlaAAACLAAAABRiWFlaAAACQAAAABRkbW5kAAACVAAAAHBkbWRkAAACxAAAAIh2dWVkAAADTAAAAIZ2aWV3AAAD1AAAACRsdW1pAAAD+AAAABRtZWFzAAAEDAAAACR0ZWNoAAAEMAAAAAxyVFJDAAAEPAAACAxnVFJDAAAEPAAACAxiVFJDAAAEPAAACAx0ZXh0AAAAAENvcHlyaWdodCAoYykgMTk5OCBIZXdsZXR0LVBhY2thcmQgQ29tcGFueQAAZGVzYwAAAAAAAAASc1JHQiBJRUM2MTk2Ni0yLjEAAAAAAAAAAAAAABJzUkdCIElFQzYxOTY2LTIuMQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWFlaIAAAAAAAAPNRAAEAAAABFsxYWVogAAAAAAAAAAAAAAAAAAAAAFhZWiAAAAAAAABvogAAOPUAAAOQWFlaIAAAAAAAAGKZAAC3hQAAGNpYWVogAAAAAAAAJKAAAA+EAAC2z2Rlc2MAAAAAAAAAFklFQyBodHRwOi8vd3d3LmllYy5jaAAAAAAAAAAAAAAAFklFQyBodHRwOi8vd3d3LmllYy5jaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABkZXNjAAAAAAAAAC5JRUMgNjE5NjYtMi4xIERlZmF1bHQgUkdCIGNvbG91ciBzcGFjZSAtIHNSR0IAAAAAAAAAAAAAAC5JRUMgNjE5NjYtMi4xIERlZmF1bHQgUkdCIGNvbG91ciBzcGFjZSAtIHNSR0IAAAAAAAAAAAAAAAAAAAAAAAAAAAAAZGVzYwAAAAAAAAAsUmVmZXJlbmNlIFZpZXdpbmcgQ29uZGl0aW9uIGluIElFQzYxOTY2LTIuMQAAAAAAAAAAAAAALFJlZmVyZW5jZSBWaWV3aW5nIENvbmRpdGlvbiBpbiBJRUM2MTk2Ni0yLjEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHZpZXcAAAAAABOk/gAUXy4AEM8UAAPtzAAEEwsAA1yeAAAAAVhZWiAAAAAAAEwJVgBQAAAAVx/nbWVhcwAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAo8AAAACc2lnIAAAAABDUlQgY3VydgAAAAAAAAQAAAAABQAKAA8AFAAZAB4AIwAoAC0AMgA3ADsAQABFAEoATwBUAFkAXgBjAGgAbQByAHcAfACBAIYAiwCQAJUAmgCfAKQAqQCuALIAtwC8AMEAxgDLANAA1QDbAOAA5QDrAPAA9gD7AQEBBwENARMBGQEfASUBKwEyATgBPgFFAUwBUgFZAWABZwFuAXUBfAGDAYsBkgGaAaEBqQGxAbkBwQHJAdEB2QHhAekB8gH6AgMCDAIUAh0CJgIvAjgCQQJLAlQCXQJnAnECegKEAo4CmAKiAqwCtgLBAssC1QLgAusC9QMAAwsDFgMhAy0DOANDA08DWgNmA3IDfgOKA5YDogOuA7oDxwPTA+AD7AP5BAYEEwQgBC0EOwRIBFUEYwRxBH4EjASaBKgEtgTEBNME4QTwBP4FDQUcBSsFOgVJBVgFZwV3BYYFlgWmBbUFxQXVBeUF9gYGBhYGJwY3BkgGWQZqBnsGjAadBq8GwAbRBuMG9QcHBxkHKwc9B08HYQd0B4YHmQesB78H0gflB/gICwgfCDIIRghaCG4IggiWCKoIvgjSCOcI+wkQCSUJOglPCWQJeQmPCaQJugnPCeUJ+woRCicKPQpUCmoKgQqYCq4KxQrcCvMLCwsiCzkLUQtpC4ALmAuwC8gL4Qv5DBIMKgxDDFwMdQyODKcMwAzZDPMNDQ0mDUANWg10DY4NqQ3DDd4N+A4TDi4OSQ5kDn8Omw62DtIO7g8JDyUPQQ9eD3oPlg+zD88P7BAJECYQQxBhEH4QmxC5ENcQ9RETETERTxFtEYwRqhHJEegSBxImEkUSZBKEEqMSwxLjEwMTIxNDE2MTgxOkE8UT5RQGFCcUSRRqFIsUrRTOFPAVEhU0FVYVeBWbFb0V4BYDFiYWSRZsFo8WshbWFvoXHRdBF2UXiReuF9IX9xgbGEAYZRiKGK8Y1Rj6GSAZRRlrGZEZtxndGgQaKhpRGncanhrFGuwbFBs7G2MbihuyG9ocAhwqHFIcexyjHMwc9R0eHUcdcB2ZHcMd7B4WHkAeah6UHr4e6R8THz4faR+UH78f6iAVIEEgbCCYIMQg8CEcIUghdSGhIc4h+yInIlUigiKvIt0jCiM4I2YjlCPCI/AkHyRNJHwkqyTaJQklOCVoJZclxyX3JicmVyaHJrcm6CcYJ0kneierJ9woDSg/KHEooijUKQYpOClrKZ0p0CoCKjUqaCqbKs8rAis2K2krnSvRLAUsOSxuLKIs1y0MLUEtdi2rLeEuFi5MLoIuty7uLyQvWi+RL8cv/jA1MGwwpDDbMRIxSjGCMbox8jIqMmMymzLUMw0zRjN/M7gz8TQrNGU0njTYNRM1TTWHNcI1/TY3NnI2rjbpNyQ3YDecN9c4FDhQOIw4yDkFOUI5fzm8Ofk6Njp0OrI67zstO2s7qjvoPCc8ZTykPOM9Ij1hPaE94D4gPmA+oD7gPyE/YT+iP+JAI0BkQKZA50EpQWpBrEHuQjBCckK1QvdDOkN9Q8BEA0RHRIpEzkUSRVVFmkXeRiJGZ0arRvBHNUd7R8BIBUhLSJFI10kdSWNJqUnwSjdKfUrESwxLU0uaS+JMKkxyTLpNAk1KTZNN3E4lTm5Ot08AT0lPk0/dUCdQcVC7UQZRUFGbUeZSMVJ8UsdTE1NfU6pT9lRCVI9U21UoVXVVwlYPVlxWqVb3V0RXklfgWC9YfVjLWRpZaVm4WgdaVlqmWvVbRVuVW+VcNVyGXNZdJ114XcleGl5sXr1fD19hX7NgBWBXYKpg/GFPYaJh9WJJYpxi8GNDY5dj62RAZJRk6WU9ZZJl52Y9ZpJm6Gc9Z5Nn6Wg/aJZo7GlDaZpp8WpIap9q92tPa6dr/2xXbK9tCG1gbbluEm5rbsRvHm94b9FwK3CGcOBxOnGVcfByS3KmcwFzXXO4dBR0cHTMdSh1hXXhdj52m3b4d1Z3s3gReG54zHkqeYl553pGeqV7BHtje8J8IXyBfOF9QX2hfgF+Yn7CfyN/hH/lgEeAqIEKgWuBzYIwgpKC9INXg7qEHYSAhOOFR4Wrhg6GcobXhzuHn4gEiGmIzokziZmJ/opkisqLMIuWi/yMY4zKjTGNmI3/jmaOzo82j56QBpBukNaRP5GokhGSepLjk02TtpQglIqU9JVflcmWNJaflwqXdZfgmEyYuJkkmZCZ/JpomtWbQpuvnByciZz3nWSd0p5Anq6fHZ+Ln/qgaaDYoUehtqImopajBqN2o+akVqTHpTilqaYapoum/adup+CoUqjEqTepqaocqo+rAqt1q+msXKzQrUStuK4trqGvFq+LsACwdbDqsWCx1rJLssKzOLOutCW0nLUTtYq2AbZ5tvC3aLfguFm40blKucK6O7q1uy67p7whvJu9Fb2Pvgq+hL7/v3q/9cBwwOzBZ8Hjwl/C28NYw9TEUcTOxUvFyMZGxsPHQce/yD3IvMk6ybnKOMq3yzbLtsw1zLXNNc21zjbOts83z7jQOdC60TzRvtI/0sHTRNPG1EnUy9VO1dHWVdbY11zX4Nhk2OjZbNnx2nba+9uA3AXcit0Q3ZbeHN6i3ynfr+A24L3hROHM4lPi2+Nj4+vkc+T85YTmDeaW5x/nqegy6LzpRunQ6lvq5etw6/vshu0R7ZzuKO6070DvzPBY8OXxcvH/8ozzGfOn9DT0wvVQ9d72bfb794r4Gfio+Tj5x/pX+uf7d/wH/Jj9Kf26/kv+3P9t////2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAEsASwDASIAAhEBAxEB/8QAHAAAAAcBAQAAAAAAAAAAAAAAAQIDBAUGBwAI/8QAShAAAgEDAgMFBQQHBAcHBQAAAQIDAAQRBSEGEjETQVFhcQciMoGRFKGx0RUjM0JScsEkQ2KDFoKEkrLC4Rc0U2Nz8PEmRVSUov/EABkBAAMBAQEAAAAAAAAAAAAAAAABAgMEBf/EACMRAQEAAgICAwEBAQEBAAAAAAABAhEhMQMSE0FRIgRxMoH/2gAMAwEAAhEDEQA/ANpzXUTNDmtGI1dRc0OaDDUJr39361N1B69/d+tK9HO0EOpo4og6mjipiqMKOKIKOKYO4vgpSkozhKEzKvU1je2s6K11NHvY0G7CmcusxpkKcnyqeuz76S+RRTIijLMBVcl1id8hByimUlxNL8cjH51N8mMVMbVnl1S1g6uCfAVHzcQncQx/M1CBaMF8qzvlv0qeOfZzNqV5cZ5pSB4LTXlZjliSfEmlFWjhaj22epFxsBy2UQ/winNIWe1pH/KKXrsnTB2BQco8KGgpAXkFByedHrqNGJynuNd7476NXUgVhyynmo+KCD4TRyKuJotDXV1UThRhRRQ0AcV1AKGgBrq6uoBWuouaHNasA12aDNdQBwahNd6x+tTINQuudY/WlelTtCDqaUFFA3NGFQujCjrRBRx1pgcvhcCo24WRyeRyKfOabdWNc2fbfHpFSW8xJy5PrSBikXuqZZKSZKwsayon3h1U0HP5VJGMHqKTNuh7qhWzMSCh7RaXNoO40k1o3dvSGwdug76Ht89KRFm5k+GnsVi+Nxiqk2m1crP/ALpH/KKWpK2HLbIPAUrXY53UFdXUG6urq6gOrq6upCF4PhNHNEg+E0c1c6KgoKGuqkuFdXV1AGFDRRRhQA11dXUBGjiPRG6azpx/2pPzpQa9pDdNWsD/ALSn5145wPAfSuwP4R9KfyI+N7JGsaYempWR9LhPzo41OwbpfWp9J0/OvGeB/CPpXADwH0o+QfG9oC+tD0u7c+kq/nURrN1bsUxcQ9f/ABF/OvI4wO6hzSuezmGq9QCeE5xNGf8AXFKCRD0dD/rCvLfMR3mhDsOjN9aXsrT1MpB6EfWlFFeVhLIOkkg9GNGFzOOk8o/zD+dHsWnqZwfA/Sm6qxc+6fpXmQXt2Ol1cD/Nb86Ouo3y9L25HpM351lcdtJlp6aKN/CfpSZQ/wAJ+lebRq2pDpqN4PSd/wA6ONb1YdNUvR/tD/nUXxq93owxnwP0ohQ+FeeRxBrI6atfD/aG/OjDiTXV6axf/wD7DfnU/FT+R6D5aMsZbopNefl4q4gX4davx/nGlk414nT4devx/m0fCPkehYLKRj8OPWniWB/ecCvOi8e8WjYcQX5/1x+VFfjjimT49duz6sPyrWYyIuVr0+mFQAHoKNmvM6e0bjGNQq69PgeKof6UrH7TeMo2Dfpp3x3PFGR/w1Wyek66qb7PeMn4v0eZrqNI761cJMIxhXBHusB3ZwdvKrjQYa6uoKAGuoK7NI4cQfAaUNJwfAaUNXOk0WuoaLTiQ11dXUwGhFAKEUAaurhXUB5K/wBGm/8Ayl/3P+tMRpbm8FuJRkvyA8pPf4Cpn9MH/wAEf71N7eO6vtTRbKGSS5kfMccQJYnrt9K58Pff9Fj7fZtf8Pz6c3LJKrNzFdkYYI9aY/Yn/jX6VLNfTSXwurk/aJA4ZhKchsHofLuqTn4linQqNC0qLJBJjiIOAc4699a8K1VW+xP/ABL99B9ik/iX76sw4ggBUnRNNbBc7o2DzeO/d3VG3d4t06MlrDbhYwhWEEBiP3jk9TSGqivscn8S/fXfZJP4l++nZkopmA6/jS2ejb7JJ/Etd9kk8Vpz2wrhIKNjR3Z8Kazf28c9rarLFISFYSqOmxzk7fOlTwZxAJGj+wjnAB5e2TJBOARvUfzA91AWHhVSwtU3e1mjkeN1AdCVYZ6EUpbWM91cxwR9mHkYKC78oz5nupUNTiyuvsl9BcYc9k4bCNyk48D3etLZ6J3OhX9pbtPMkIRZDEeWdWPMCR0Hod6WteGNVvbMXUEcDRNzYzcIG2ODsTn86falrp1CGaIRyIstwZsNIG2Pd0G+e/7qn+HIrXSrx1TWLK5NyqoI4JmVuYHIHwNnvHrVSS1N3IpWpaHf6VKkd2kQZwSvZzK4xnxUmmXYy/wj61ceMSftluedXHK/Lyyl8Dm2HwLj+tVnNTlxdHOjTspP4R9aL2Enh/8A1TzNBS2Zp2MngfqKLgo4Vs5NPaa3H7ZPQ04TWvYdn7Zrnh2UP/E1bMKxr2G/951z/wBOH8WrZBSMNdQEhQSTgDvpJru3Q4aZAfAmjgy1dREmif4JFb0NHpHDiD4DR6Jb/AaPWk6SCurqr/EPFumcORZupeaZh7sSbsaLZOalP0NUfhr2i2nEGq/YDbNAzAmMswPN5VdxRjlMugMK4UAoaoDChohYKMk4FE+0xfxj60bDyPVm9nsvZe0HRmz/AH5H1RhVYqV4cuvsXE2nXROOynVqzx7O9Ixz77fzH8aLSkzs5AJXCjA5QBtknfxNJYpKgCaIWoWOBSDNSMLPStlqEtlK7RokhccvK4yPKmpNXD2ecLx6/qktxec62luMKQuQ0h6A+QG/0pzH24RnrXKp3MFzZy9ndRSRP1w4xnz86TWUivSk/BllcQRwzKnZgYwFwF9AfyqMk9neg2zO6wl3A2Ahi+7I3Pyrf4aznkjCbe3ubmGWaKCR4ol5nkC+6o8z0pPmrab3SfswVLfTxyIm01/IrYO/RdlH0rIdZ05tL1KSDmV0+JHXOCPAenSs8sPVeOezUNQg0kDRgahR/pt6ljdGWWBZ4yhUoyqc56dQe/FTVvrkFzeqkGnJHLJ7iMFTAY/vEcvQeW+1VcGpGzv7W0aCVbNzcRHJkE3U9xxjAq8P+6Tl/wA2kuKAUNkhjCFEcDAA5hzbMNhse7NV/NP9W1T9KSRv2Ai7MEAAg9fkO/P1qOpZ63wMeuQ5rq6uqVOptP8At09DTnuptP8At4/Q0QNc9ho/X65/JD+L1sdY77Dv2uufyw/i9bFQbioYEEZBplqGk2mowlJoxnGzDYin1dSsl7DKtXstQ4fvMdpL2LH3JVJx6GnencX6haFROwnj/wAXWtAvo7SW2ZLwIYm29+qvf8FRSKZdOlwDvyNuKwuFl/k1m0PXLTVYD2TgSDqh6ipasWP27QtQ5k5opYzuv/vqK0zhziGLW7TchbhB76/1rXxeXf8AN7SU4m1yPh/RJ7193AxGufiY9BXnXUtQudTvZLq6lMk0pyxPd5DyrRPazqTSala6eG/VxIZGHmdh/Wsz6gt47VHku8tMsrzpLcKSPFxTprITzduo+Veki2FFefvZ/ZG84ysgFysRMh8sCt9dq08PVVhOCjPiItRY5gY8k00u7uOC3Ysw9KgpNRlm/VxkgGnn5Zg1w8VyP9c1BUiwrHA64NVJtRuGYlCeXu3qQ1TIgSIEl2NMhbcg5SK4svJcruuzHCYzUYZ8x9aMjmORWHUHIxSdDneu5wjt3HlxkfWi5rm2AOCMjqe+kyaATkamxalZTSBpgrBFJczJDEheR2CqoGSSa0vh3Nm0Ol29osjgElwWzzDctgDf0qI9nmnmG8/T8lwsEdpKFDHqMj3iB37bD1pfX+KTPr9zdW6mAyEcvKcMgHmO/wAavGTGbqbzdRod/wATw8PQwSz2ks0MuyvFMVBI67EH8aibn2jaJcZ7X9JQjb9kqMV+eR91JaFDJ7RLK20iSZ4I7bmnknKc3M3cNz35OTVy1b2b6XqXD62UWn20N7bphJ4Rycx8z35675rX2yvMR64ztR5+NuFnjAVdWkI94Hsh19S+T6moa8ij40sbuPTdGS3ls4nuluZZyZZQvVeUDG+R6Y6mtR4f9nvDvDemLc61bW812N3e4PMiHwUdPnUrpt9wfcaiy6alvDc4ILQoE5h4Ed9LVvY4nTyqKODV69qnCY4e4i+32ij9HaiWkTlXCxyfvJ/Uep8KogrGzV00l3NjUaiihFSYwoaLQ0B3ShoK6gBptP8At4/Q05ptP+3T0NEDXvYd8WuekH/PWw1j3sO6676Qf89bAKDGFdQChoCB4j0i61eFEglCKh5iP4jVVg1rVOGLoQ3sbvbk433+hrSBTa+0611GBobmJXVvEVnlhz7TsbRDQaXxhpfNC6icfCw+JT51SUS+4U11GkUqA3UdGFWMcF3mlyte6JeMrg57JuhHhSl5f2+t6dLYarB9mv41ypbx8QajPHc31Ss2o/tOgeTWbfUV3gubcFW8x3ffVEhDzOscaszdAFGSTW56/wAPxahwpp+mSP8ArSyqkoG6+J+lLcOcCaVwyOdFNxc98sm5Hp4U5jcsk3DdNPZ1wq2h6e9/epy3dwPhP7i+FWW8veXPKcedLzzHl5RULdA9sEPfS8mfrPXF0+HxTuk7hXnlGSSOtIx4iuTzd1TiWgKg47qgbxWTV1TuNc1l7rplhdYRNctK42UbVFTzZmbHTNTVwwt7ZvEiqz2mSd++jWxtimR4V2aChr0HnjO7MiKZGZUBCqTsu+cD8aSNLmT+z9mUj3YNz494YyMZ8N8/SkW6UA1k60ljJxS0gyakuHI7VtYhF2vNHnfbO3fTgWfRlbWLLs7NIrHT7NcsXJId8Y5mPeaqt6R+kpEMqy+9jnXOD9a3C+t+CW4ckjtJPs6P8X2WQBlbxKGsWj02O41hoo7gmMvgSsvn3irzmtJwu9vRns60XT7DhmI2zkyTRKZTzd53qcvleW3ktYrgrJL7qv0KefyrLHvNY4SttOkk7LsVGOdGBLevlimXEXtCivzC9rJJHKuzgbDOfvrX2k7Z6tS+r8F63pXDOqXGp6xaEc6NGO1blPLnLEn945xisqt9Ylsr9XikLFWzscZrQeNtdutW4PAMkQChSVR8k+Z86x4OwbfYis87q8LxnDVZ9UbiHQn0fVpQUuMvaTPuYph8O/genoTWWyRPBM8MqlZEYqynuI61KfpKS4tVEjMWjHKpJ2A8BRNWmS+EV8M9s6hJ8nOWA+L5j8KWV2cmkaKEUA6UNZqDQ5otdQBs11FoQaANTaf9unoacU3m/bp6GiBr/sN/++/5H/PWwCsf9hnw66fOD/nrYBQA0NAKEUzDXVwoaWgWt/2dRWvaFBq9o2RyTqCUkHUGpW3/AGdHNVrc1SUzR2vXm060v4irxBmVs7NjarHLJlig3b8KiNbmaynteQkSLN7uOpU9RTzTL0X0RZYiigkYPXbxrCX13ivGbos3N2g36U21FOTkl++lJJC8jeGcUveQGbTWUfEBtXNf6265xo+tRzWyONwRUDrEHZ6tBN+6djUnoc5+wCOTqu1JamFkAz3HY1d1cEzcyV/VrnDGPPdVZeblcjNTmswsG7QVVZXbtDtUYrrMATQ0Hzo1dzgGaNxFHIYyEbIVu5sdfpkUmaNtgdc99FoBFhk1MaTahAZGAJPceuPKoxV98VIC5IhKhsGiHSN/LMbg9oxJG2e8ilNImWK9RncoCRluuKZyyF/iOT40MUqp1GaX2vXGl04guLC8hBi1GSZ1xkFSFyPDf+lUu7BEhxv6UoJlY0jPLscMDnwqrdpk0PHqVxGFHMWC9ATtTFiWck9ScmjlTy5LD60QChNGXPTNOIpAuVIyrDBpAClY+zVsyAsB+6DjNAFZSjFT3UFL3VybuUP2UcQVQqrGuBjz8T5mkaACgo1BikAUPdQYowFABSE/7ZPQ04xTef8Abp6GnCbD7DB+r131g/562AVkHsM/Za7/ADQfg9bAKDcKEVwoQKYcBQ4oa6gFIP2VNtS1O00myku72ZYoUGSzGnMH7Ksf9s2ozrfadYBiISrSlfE5wP60ssvXHZW6SWoe0Kw1WZEhs5P1MgeOV8DOPKrxpFxBe6d9sgQxpMObBrz3p7DfJwSNq23gOc3HCkQJ95GKH61z23bTx1LPbARnB6GlUmAgPh0o0mWjuAOq0msQawLKc5FZ6106d/pO3AjMir45FNrljIjAdRR4SQgc+hosrLzcw6HrUb4V9qzcajClwbe46HoTTCazt3kLIwwfOu4ptwG7VBUBHcTdmMOcU4KzYUbuoB6CjgZArtcIMe6BzZ8vCgxSoQ0cRGgG5Wk2LDbNPuy2pF4t6SpDWhpQpiiFaFlYGiVv1hOPTNFvWt3w0ROfDkA/rTZs0SiJpQOeTG1FFAKMFqkOoa4KaHFAdQ12K4CgOFGAoAN6HFIOAocUGaHNABim1x+3T0NOqaXH7ZP5TRBWx+wreDXf54PwetgArIPYSP7Nrv8APB+D1sIFVAACjAVwFGAoDsUGNqMBXEbUAMH7Ksd9s0SSX2mzxtzMisjgd2dxV94m4rtuHtNb31Nw2eVc9PM1k2u+0K11LRX0uHT+0aY80lzKd+bPUCss8prRZdKzCxVRWxeymVpNDuAzZ/XHArIYreRoDIqMyrjJAzjPjWp+zPTNY062mnu7cwWjDmUSbMfPFZ960fj4vK/FuW6kU9HGKRspMB4D3GnBCXERcHZhzKRUSJTHfIx25tj61GXGq68edwtNmJpE+dQs1/2TnPw1M6i2f1i9ehqr3cfMZAfWsr20nRHVmF1AWXcYqti3IGKsFkQVeJ+ndTR7b329ac4FjIkUmnCxbUWJM09ggaeVIk5eZjgczAD6mu5wEFTFHC0//Rc6xl2ktlA23nXPXHTNC2mlSM3dnv3iYHFPVPcMOWiOmRUjLYxxQs4vrWRh+5GxJPptTQilo5Ue60gwqQePm2AyT0ArUNL9mVomlI2rvbpehAzIIXdY8jIDkMN+mcdKeOFy6GWcx7YwwomKldb0e40TWLnTrrkMsLY5k3VgdwR5EVHclLWh2Iq707hgV45GaVEKLkK2cufAefrTzh+DtNfs0Nkt5mUf2diAH8jnbHrS99YTx3N3cfYWt7dbhoyoGVjb+HNP62n70araQg4M6sMA5UH6b0qtnZmGRmuSHGOVcdfHuoiijY2pHohLBbKh5ZWLd3un8q6aOwCP2El0z/uc6KB88GrWml3et2GhacbuyjjYSmP3WLR4BPv8oJ3x3fOqfJGUdkbqpIPyp2aTBCE7NQFIYE8xz1ouNqHFd3UjFxXKjN03PXFDyPke62W+Hbr6UHM8ZI6MNum4oBzZabc6hIsdqokkc8qoDux8h30xv7Z7eeMOyklT8Jzilx9piVJF7RAx9xlOMnyxTO6Ei3IWXm5wDkNVTRNm9hA/suvf+pB+D1sAFZD7Bh/Y9eP/AJsP/C1bCBRDABQgUIFCFoAMVFcQazFoelTXcm5VdhUwFrM/a/eNa8PxWqMO0u5eU+PIBk/0qc7rHYZDxDr9zr19JNI55CcgVH2yCJTM/X90UKW/7zbKOtEll52wPQCuTe+Izt+61z2cahoOn8OTzaldwC4nlz2bkZ26bVfr4x3ug3Uy3ZVnhYoY2xy7bV5shcWQ9wAyt3/w1d+FtbkutB1DRZMl5FzDIDgjPUZq8PJ9a4XhnMmrcP3sUvDmn4ZyexUc7DGTij6iAeydRhlan+nxxQ6bb268vKsarj5UjNAMsB8K9Kvyy+ro8V5Mr0kDPcwqEvQew5x6GpJ5j2nZsMjNdLbLLbyJ9K5N8umTSmzXJt/fB9af280U8KyEjJqF1WKWKR4yDg99RP22eH3FJwKuTYyVtbC6jUmS2lQKOY8ykYHjvQCo9tYaQ5lM0hxjLNn8TQfpZR0hb5sK7dPPiSwKCo06s3dAPm1F/Skp6RIPmaNHuJYUJqGOp3HcsY+Roh1O5Peg9Fo0W05E5imjlUDmRwwz4g5q9XXF73ouJ0uliE5LOrluaMkbgAbH51k41G7BBEuCDkYUU4uOINXuoRFPqEzxg55SR+VVjbCy1UprN02p6lJctncBF5uvKBgVHdjUebidt2mkJ82ohkc9Xf8A3jS0qVbOH102K/aXUpJ41RcxmJ+Q83riiXj2zJcNFeSEGYlYnySwz8ROMVVCxPefrXbU51pPd2m+0QDd1+td9ohA3lT/AHhUHt4ChpaPa0trGktaWUDWyq0IcSyxPh5M9N6iJbq3Z2KthSTgYJwKjaCmR21xF3En5UH2tRGyBTgkHoM7U1rqWgkZdZuJvs3aEMLZeSIFBgDz8fnTWS6aWVpGUczHJxgD6U3oaBCnbtgbdOm/Sk3ZpJOdjv69aDmX+JfrRo0aVwkal2JwFQcxPyFMNs9ggzY69/60P/C1bGFrPvZBwve8PcM3E+owtBc38ol7FxhkRRheYdxOScelaKBThiBaMBRgKECgC4rz97TtWfVuLZLdWzDZjslH+Lqx/AfKvQbD3G9K8v8AEfOOIdRXrK1zJny941z/AOi8SJvSEmYsORei9fM10FuIozM4yf3R507W2xiMDPjRnQPIEUe6n41lMNTTK8kRbhIGlkPvNTA3EkVzEsUrJzMASpwakJpeb3CdhU5oXClvqLLc3LEKpyKNyVr4sLbqLDwvr2qkyafGjTOcBJmY+5WqRB0sgssnPKQOY1UdKgtNMT9Sqg97GpJdXTtlQNzFjis/e9O7Dx+vZWYpHJzGiQ3YPNRdQhYy4HfUbqJljhRol6bNWcm66OND36QyEsyg1Xp7O3aUkJR5dVkXII2pZG7RA5XqK0ksRYxAGuFarH7OdFR+V3nc+DS4/AU8/wCz3SFGUtQ380jGvS9K8r5Ix7furgTWxrwHpy7izh+eTRn4H05ojy28MUg6ELkfOj0o94xrPnXAE9N/StYt7OPSLkRz2FsD3MYlIYfSrXYz2cyjs4IY28BGB9NqPU9sAS1uJNo7eV/5UJpwmj6nIQE067YnoBA35V6HVynwnHptRmmMgxJ748+tHqNsDi4Q4jl+DRL8+sJH407j9n/FcvTRp1/nZF/E1utuWLcqTMB/C45h9aeqxWXkcLkjIIokhsFX2acUt8VjEn81wn9DTiL2WcRSDLNYx/zT5/AVt8x3NMpeYp7rYNZZZarSY7jIx7KdZH7S9s19Odv6Uunsquv7zVYl/lt2P9a0hrq7hOxDDzrl1tl2lgz5ip95+n6M4/7MoIziTV5Sf8NuB+JpKT2e20fwXlxIPNVFagur6fJ+0i5T5il0k0mfoyA0b39jU/GSHgu1j6x3L/5gH4CjRcJWmfesZCPOVq18adZSjKSJQHQ1PwFSKP6H8qFp3BuiyRhm0uNj387Mf61YdK4S0NLtA+iWJGf3oQ341PR6VNDso+lOrWCWO5Qspxmqm/srr6TFtw9osCDsdH09P5bWMf0qQitYIDmGCKP+SML+ApSIfq19KUArXSNgAowWjBaMBTIQLRuWjgUOKAT5dqpPHVppmjcM6hfxWFt9qmwnOUGSzHGc/fV6xVA9rKM3Dlqo+FrpQ30NRnJoMVfkjtQwzzHxpEx/Z7fmPxNvUg1k11e9gg91Bk4p3ecLa+biKEabNmVcx7bY8/CufK6iJFWjh7SUDBLMegrR9Li7LQFdRjHWpLQuBIOHNLuNX1bE11HGXCD4U2p7aaf/APS0RdSJbiNpCPDO/wDWs/iyk3XT4L61UZNWa4l5FYhFODjvo66utpLGxPvFhUUipYxuH+PmO1Q1xcM8xJJzn6UpFZeSxts8waOCcbqyjekLhR2TEDKtUZwndNq3DfK27Q+7mn8LnDQv1FZ61XXhlubVa+tsz4A6mnyIUjVSOgpzdW+btdu+n81j7wwO4U9rNbmBmnygUYp9bsUTlYAmo/spFZ2Zuppe0nHae8xA869P+tvF/nSSVnIPuD60jKkrqcACrBpFtb36ykseWMDPL35/+KDU4bSxVGRmIY4PN3Gr/wDqNXW1SNg9wGinQOh7iOlR13o1xpp7W3YzQdSB8S/nVnkvYQMrjIokM3bqWAxRlo8N7QVlqPaKA5yO5qfh8jIO1NbuxS3v1kQARzdV8DThoGjHu5pTlVuiF3eXltJD9kiDlmAOVJ7+nl61PvJmSFvPFQgfBydseNPRd2+IVa4iDFwAOcZ6+FReKuXZ9MdzTYbil5uppBNxWGXbox6ISIDTSWAHO1SJWkmSsapDS2o3phNAy9KsEkWc1FXkbRknuok2EWZZoj7sjr6Gjx61fwH3Lp/nvScgZjTaWLbwqtUtp214w1JD7xRx5irHo/FEmo3aW8kABb94Gs8RCjeVWXhZc6zCa0xtTZGuxr7g9KUAoIx7g9KVAroYgAowFCFowFAFC0blo2K7FAFxUDxhpEescOXFu7BGXEiN4Mu4/L51YcU3lgE7Zk3Rei+JpWbmgz3gvgVrNzqWphWkkIZIevL4Z86vNzCW5SqjIpygwuKNijGSQKZxksq8Nzwop7S4ZYVHiWIFDJb9lNY25XAEJXp4AVO6snb6lpdsVBXtjK2f8IOPvIp3NCj38WUBwh7qVm7Vb1Iyq84JhTUZrx5i8ZbmWPHSqhxdoZtX+2RJiMjDADpW+3NhDIpDIMVT+L9Ehm4fvCgIYJtWeXjknA3tRvZlqqJJdadKwBf3kz31cbuLln5165rPZ+CNW0/ULSbT5C0cuGEo6x+tXy3hvAqrK4lwPeY+Nc2WNsdHhz1xR4oO3uUPnvUzLbjn6d1RNqzwagoYYQ1Y2AJz5VMx423uUt0iBpHNzZNBHoaM4XpkgZpaLVIyDUroFzFc38mVyEj5hkdN69a67eNju3SRttHttOtHitslnILlj1x+FMr3T47lOSdTgbg5xg1I3AjdyySjPgaaumRuwH31ja6JFcGlRK5U460nJAsDcq9KJxJrK6IomLqkOeVnZc4bu+6qdP7QLRiSbgMf8MZ/KruWOmeONlXERpJKiuisN9mGaSl0yzllYyWsbHzFUZuPomJ5HnJweiYqHm9p0BOFt7t/VwP60vaHqr3Po9ikp5bKL/dz+NPYI7a3VOSOGPDA+6oFZTL7SHIJj04n+eb/AKUSHj28uXZRaQR7ZGWJqbYqStjnurfmbEyH0NIJe2yD3pM+grJm4t1N/haBfSPP4mkTxFrEh2umH8sYH9Kzsxq5lk15tTte7nPypFtSh7o2rI21HWJut1dH0OKTKalL8T3DfzSH86Xpj+H7ZfrWZNUiUHIUfzMBUZdavZscvPbr/mCs3Gm3b/Ev+81HXSJ+8oKPWfhbv6ucut6Ymc3UHyOaZS8QaV3yBvRDVcGjueswHoKONGTvlY+gp6CYPE+nIfchdv8AUFWjguRr3VoLyBv7O+fd71OdxWcXmnLBB2kZY4+LPhVk9mmsrYcQpZTtiG4YBSe5/wDrRoTh6NjHuD0pVRRYh7g9KVFapdihAoQKHFABiuxQ4ocUAXFcRsaGgPQ0Aio2owFco2owFAQPObvjTssMFsrXmJ7i0hx+C/fUvyZvc+Cf1pjZAHibUjy7iGEc3j8VSqr+vc+QFLE6SkjyKgNctjPp08IG7rirOVyKjb2DmIPhTs3CnCudgYrFIz1VAKbCDkPTuqakh5jjFIXEGMVlcVyojsA1zGcdDUu496kIoD2ynFPHjYscA1llj/LbDL+lWWSzXowqb4dkge5n7EjIjGcetVvhi1097b+2wpNM3vHnJJVc4G3htV002ytbRpDbQxoHUbqOozXdzpwYyexXqx9aCTYUYfEaJJ31i3VbjDSTqXDd6mMlwzJ/Mm/4Zrz00qpLyuSMHDeVemdbaRdCmaHPaRxsy48f/ivMnEMElrr15HLuWfnB8Q29GU4hTurBZaMkgE4nTkGRhpQpzjwqAvOHLiC1SaI9vIzcpiiUsy9d9h5ffWl+zi5tdS0TsbggS255c4HSrdLDpcWVeYHyL1NsjHLyWXTFrXhMPDE8sd6zNuyrAV5dvMjv2peLhK9hdnW0bs2+As6g4z35JrWi2jgEKqMfmajY2fHIluX5dshO6qw1kmeW1TouGr0qCBCgPi2T9wpwvDNzkc1yg/lUmroslwIOUWpB8SQKbzC7ZMsqgLv8W4rT1h+9V1OGpB8U8h9I8fiadwaAikB2lb1IFSYa4eJT28QU7jbeiyJNgmS7GPID86WoPako9CtMlSpJBx7zmlxotmgyY4vnk0ymmjjdea5dlOxI2xRTc6eBl7hifAsaNQe1Ob3T7QWciJ2QkxleVR19apzXkakjfI7qsL6jpqD3Rznzz+dVS5s5NQ1uSO3uIoEkUyKZFJzg+8Bj1BpWKxyHe8RlKldjtUCbr7FeqVYoyMGRgfPY1Yv9EJjvNq4AxnEcX5mqfqtnLaXtxaSMXaFso5HxL4/TB+tRY0mT1rwRr8fEfC9rehgZQoSUeDDarKK84+xviuTSrx9OdgYrge6H6Bx+Y/Ctzh4ktycSJjzVs1UvB6TooaBSGAIOQRkGoPXeIv0QoSG1e4mJwDghAfAnvPlTCdoazWXizXWky13DB/5ccIbHrn86ktP43likWPUkEiH+8jTlYfLODQF2dhGhdugGTUXJrcIJVYpD6jFPRcQ3dgZ4JFkidcqynY1D8qnw+dGtjZZNWZtuzH1pyl8zfuimHIo7hQiTl6GlqnuEdNv5H1/VsqhA7MDHXZf+tHW9vJdTu+SfkjXlUJyg42pKGOK3uJ54hiScgyHxwMCuX9XJI6AlpDlqUlnYtiZgvmEQWUcz97DbNFuLtCpypqMVrluiAetKrbyOP1jDHlVEUBQn1oskBkYeFKCNU86HmNGgIlsiHmO5o+w7q7NBg09BTuGJ31Ke/nuArO1pGDhQB8bd3yqy2aSQ6lNa9kywxwqySH+8LHffyx0qD4N0y5tra4nmT9XLDGEYdGwWz+NWiZ5I1HKxHlTl4R6kQNzSM7qikkgCjiVjnKp9KazpGMsUUnz3qLKuWGZnku4TFDEG93Y/xDfP02rC/aXprW19DdMnKwJgk9RuP61venTRJes0sip7uBzHFUn2r6AdT0y8mgUO3YfaBjf3kO/3Ua4LfLKeAdUjs9Ze2kKtHOvwnvIrUP0pZoNoQT5KBXn61ne1uoriPIaNgw+VbNp8Vpe2UVz2shDqGIBG1XheNMfLLvcTDa4gHuRY8DnpTNtXcSO6qAWAyCaeaXZaPLak3W0qOUYvNyjY7H6YouprokMKNa/Zy6OCyq/OWXoR/X5VPyz20x2YSa5c9zIvoKaS6tdzHBlY+gp5PPD2avb255o2D5WE4wOuTjwpwt1cMmYrGUg7hsBf61pwer+q9LczoMM0i+A6U1aZ2zlmPqTUvq8dw8H2ieHkWLqecE4PkKgDdxjoRRuD1p9BYXN3H2kfJy5xlmpWTQ7qIHneNWxkLvk030u8Wa6NuLjsg4yDy5yRU49qjxGSXUZnI25cgHH0peyvX9RcWkJKqt9rGGGRhcfiaZ6tpaxWgmtp5O3hbnU7DyOPlU5p8WkdtcQ3bt7uHQvOVBU9R1G4P40tcXvCNr7jPZcxGN5OYj7zWGXm1daG5L0qmniG5doJnZ2mT9UzSNlT9cVHzaQ00wcJysh5ZCd8U50Sxln1CaKzczLFIWSVcjK52xVymsO3ndI0VG5QZFcgYPjnvqu284Z0ivpV6jQHkeFw8bDyOQa2rR9UTVNPt7yPpImSvge8fI1lWuWTQuxOC0ZwxByCPGrD7NtcFpqEmmTEdnN78WRnDd4+Y/Co19Nd/bb555/9ELZiGWZ0jXbr/wC8CobU4btrdIQSQ7buvQDzot9qUkOUQ5ZRuzHOPSmEGqXEp7Jhz8u+RVzP1K4ex5bWdvajCpkgZZyNzRnso7iMq85YHuZF2+6hhnAkXtk9w7MPKn0lpCGIVZB5hqeFx1yWUv0aWl5Lo9k1pbXCmIsWw0QJyevfTrTb0Xsb8+O0Q4ONs+eKbPpkMhJZpfqKX0+2htRIIwTzHck5NVufSZL9pDYfxfSjxxtL0G3iRSSnJwPxqSjHJEB30zNzbIOuPpR1ijXoooz4AJJpIS82woBXIHQUBakWfFAH86AW611JCQCiNOBQCxoQRTNpzmkzO2etAPdGspLDTIbeV8so3x0G/SnNxHldh9KQa+z8CbeJon2uY96j5UgQflTqQPWmFzODkA59N6ljO7j3wjeq0URwucGPlPipoCrtZ3FxMSV5EwRv1OadpZp8EnvKylCD4EYNTx00AFkk2JzuKTOmOSCGBok0VeSuI9L/AERxFf2BTl7GZgB5Z2q28G6hYGwMN8I8xgcjSNgY8Kf+2bRmteIrfUUX3bqPlc/412qg2COxMY3JOwFR/wCadkyx5avZa/oNlqUnaNaGB4gQezDcjqfTvB+6n11x5w92LwqzsjqVZYoMDB28qoVtoUaJzXRmJzghfdAPhk0le2FhA3KGlR8ZHvhhSy8e7usfTG1OJxtGlqkTRTSsq8pYkAMBt94pjDxjNb26QpADybKWfu7vu2qCtYEe7WORsr3Y/ePhUq90LeEmJLdEC5PvKD9M5NXLf1frJ9C3XFV7dxyRtHEFcENsT1qHTtZX5UDMx7gM0peahbOcO0BOAeZD0pC21WzgRgbh1JO/JHzZH3UlSanEOxZXsZDqpVhuCGGR99N5pbgMVlklz4MxpJ9dtsEILmRs7bBQfxNJXcmqQQLNcaZdQxEjleaJlU/Milx9Cb+xZ5RH7pyZD3DfFKadpxuZOYlsfvMaY2wkkkLso33JNW7hnS9S4hvjY2EkEPZxmR3cbKoIHnnc0tq0eWMIgKrGxjAHVTgmpdYo32Cq5x/ickeNQ3E2g6vwu1u1xqEUqTEhHgcggjxHUVXu1u7jA7SeTAwPeY0vbQ0s90bZ0dTyoDsRzbVWY5ZLG+SWFwJIXDIwPeDtV+4V4Y4em4fW81xJTdSSuvZtIU5VHQgbdd6gNS4VnbVrhdIheSw5v1LyyLkj19c0WU5prehXVpxHosF1jdlw2Dup8KlLXRoLWUuksnvbe9g1Q+ArTU9BlkhvQgtZSCOV8lW/KtTSHmGT8quYy9ltRuJ9Y/0f162FxbGfTZI8yurYdTnBx3bDBx31coZ4bm2imt2zE6Ar44xTLVtJMwaZMSY3KMMn5VGWFw1hJ75LRP1HhWNz9MtWcOjHxzPDcvKwkbGmguEDshDAp0K9aeKRNGHiHMhGQfGh02xxcSyzBck7DOdq0jCj2KyzjndOUA4BPf51IFt8eFHYhVwNqRyBua1S51yKbMeyJJNJXV8VysYyaYM91KC7rgCkD4ku2Sdq7nC99Rn2p+hoRPnvpbPR80u5pPtM027TNBz476NjRzzUQtvSXbYFE580bGlheyXqjY8jSYtZB05T6GkJZpJGyxI8hQIxG6sQfWqI6FvJ4ffRhC3lS4fntw3fQOECZcsAv8NIUbcpynp30KuM4BH1pBZoVOAThjj3uhoeyVSQsBHLupzkH0o2UrPfbBo4v+FZrhF/WWriYY8Dsa85x3jwSc6NuPGvYmq2KappdxbSL+0jKFT5isWHsm0mNyJZbhiDuOfH9KVxt5g3J2zA8SageYCRRzDBxGvhjvFXvRfZrrfEuiW+rz61FB9qj54kdGc8vQZIxjpVhg9nHD8HW0Mh/wAbsf61M9reaPapaafFMLWOPljSPcL5Dwo9P0vefTBdRsL+w1W60+ZjJNbStExjJKkg9R5USPRNTuR7lnO3+Wa260Izz3Npyytux6knzqZhCSriOJs+HIaUxP2Q9jwBwQmgwrc2aPN2CmaVpWEgflHN37b+VZgvAN+8rcoUJzHlLOOmdulbHc8Pahfs3YCZeYYP6qnFrwjrSDlEe3jIwp3ES1lel8DS6dqNreyyQHsJVl5Tk55Tn+lX/X9ci1TSpdOZDGt0OR25s479qtMPBt/KCJuwX55pWP2dwF+eWWNWHQpHvRqDdZXa8F6Uwy7Tyer4/AVLWmkW2irLLpkTx3Dpyc4ck48N/Sr+/B1nbyFHkmYjzABo0vD1pbwh0hLg9QxLUSSC7rO4Eu7q7JvbYzDICdrjY+VWZNIeGEt2KDAyVXuqw2lvaJDziwjDq3TkHNjxok0cLc8yJO5QglArde7upb10ev1VJ9OjvFWS5EyWsIMjssZ2UDJ7qX0+DS76zX9BzySsNgpbIHiDnpVxKyTRcrHkyCCGHMCCMEEVTLbh214W1S4uNPeVGmIygf3V9BUeTP15aeLxTPj7doV5BqmoyWplRGh3lSQMhx5ZGD9atlnesk6Wwjk7MbZI2A9aio5YAC3JGhY8zqBjJ8fOkJ5UIeRJSgQczYOCKz+etp/mn6uLYZMrIVIB2x1qoXxBuGUbZOSMYwfCkbTiV7uwVoGcoOrMvvAedHmvZZ4mSRg4bB5iNx6UvJnjlNH4cMsL7To4026a057aSQmKQYGTspqz6ZC8URaTlyf4ao1rI9wyq6sGzy7ir/bL2VoinuFV/nts0X+nGS7GkemsrkjrSkjUzkeulyjxqgPM2KTubpAhUUxuJnAOKY9s5bBUmp2eizHc0XJoN87jFGGKlTgWocmuBFcaAMDQ5pPNdnzoC4SxI6kugOB3dabrFCBlY2Pf1p1GxMYOd6NzHxq0ElyYsxJlh0Q7UI7Tmw8Y5TSsYHaDbvp5gYoCMNnJzll7PGfdPLS32eVgu7Lg746NT7uNcNxSGjFbSRWOGyD3Hupnc8PxXU3aGQxsfi5R1qaG4rqcuhqINeGLMEczyt88UuvD2mpuYM4/iYmpXyrqN0esMk0uxj3W1iH+rS628SbiNQemygUtQUjBgDz9aHbpXA5z64rh0+dAcK6uru6gEbiFZoyMgMOhqEkjmVuXtuRQfeVkzj03FWDG9Mr9EwpZA3PswPfQSEitQs7ss7Ss5BAOBj0ApT7SqMedWKqcNt0pzPHFAhMcSht999qbwXss0jB1jJA2blGfrSA3Yx8qkzyEqc55cE+vdTO7u7V0MckazHGOblG3+tQapK6qqg7OTzedMLO3jup5TMvOI+XlU/DuOpHfSv4qfqIuUEjEQnnX/Dvj1Io8js1p2EirIuMDmA38ifCrSFHKVAAUDoOlQVyiqzYArm8nj9eY7fF5ff8AnJE2cEVlDyKhGeoPQeQ8qWAyfhpz2a8w2GPCjqgJNY9tuJC+kWTTXakdF3NWx/dXHhUJopxISO+pmU7V2+CSYuHz5W5mkz4zTGSUDrTicneoudjvWtYlO2Qn3qWjkth4ZqEkY83WuidubrU7PSTuXQye7TfmFISO3N1ovOd6VOHPNXc21Ng5rudqBo45q7mpDmNCGNIP/9k=" alt="Imagerie"></div>
+        <div class="historique-cat-label">Comptes-rendus<br>d'Imagerie</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORIQUE : ORDONNANCES -->
+<div id="screen-historique-ordonnances" class="historique-sub-screen">
+  <div class="top-header">
+    <button onclick="closeHistoriqueSection()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--orange);padding:4px 8px;">←</button>
+    <span class="header-title">Mes Ordonnances</span>
+    <div style="width:44px"></div>
+  </div>
+  <div class="scroll-content">
+    <div class="historique-doc-list" id="list-ordonnances"></div>
+  </div>
+</div>
+
+<!-- HISTORIQUE : ANALYSES -->
+<div id="screen-historique-analyses" class="historique-sub-screen">
+  <div class="top-header">
+    <button onclick="closeHistoriqueSection()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--orange);padding:4px 8px;">←</button>
+    <span class="header-title">Mes Analyses</span>
+    <div style="width:44px"></div>
+  </div>
+  <div class="scroll-content">
+    <div class="historique-doc-list" id="list-analyses"></div>
+  </div>
+</div>
+
+
+<!-- HISTORIQUE : DETAIL ANALYSE -->
+<div id="screen-historique-detail" class="historique-sub-screen">
+  <div class="top-header">
+    <button onclick="closeDetailAnalyse()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--orange);padding:4px 8px;">←</button>
+    <span class="header-title">Détail Analyse</span>
+    <div style="width:44px"></div>
+  </div>
+  <div class="scroll-content" id="detail-analyse-content" style="padding:16px"></div>
+</div>
+
+<!-- HISTORIQUE : DETAIL ORDONNANCE -->
+<div id="screen-historique-detail-ordonnance" class="historique-sub-screen">
+  <div class="top-header">
+    <button onclick="closeDetailOrdonnance()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--orange);padding:4px 8px;">←</button>
+    <span class="header-title">Détail Ordonnance</span>
+    <div style="width:44px"></div>
+  </div>
+  <div class="scroll-content" id="detail-ordonnance-content" style="padding:16px"></div>
+</div>
+
+<!-- HISTORIQUE : DETAIL IMAGERIE -->
+<div id="screen-historique-detail-imagerie" class="historique-sub-screen">
+  <div class="top-header">
+    <button onclick="closeDetailImagerie()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--orange);padding:4px 8px;">←</button>
+    <span class="header-title">Détail Imagerie</span>
+    <div style="width:44px"></div>
+  </div>
+  <div class="scroll-content" id="detail-imagerie-content" style="padding:16px"></div>
+</div>
+
+<!-- HISTORIQUE : IMAGERIE -->
+<div id="screen-historique-imagerie" class="historique-sub-screen">
+  <div class="top-header">
+    <button onclick="closeHistoriqueSection()" style="background:none;border:none;cursor:pointer;font-size:22px;color:var(--orange);padding:4px 8px;">←</button>
+    <span class="header-title">Comptes-rendus d'Imagerie</span>
+    <div style="width:44px"></div>
+  </div>
+  <div class="scroll-content">
+    <div class="historique-doc-list" id="list-imagerie"></div>
+  </div>
+</div>
+
+<!-- SCANNER -->
+<div id="screen-scanner" class="screen">
+  <div class="top-header"><button class="header-menu-btn" onclick="showMenu()"><div class="menu-line"></div><div class="menu-line" style="width:20px"></div><div class="menu-line" style="width:16px"></div></button><span class="header-title">Scanner</span><div style="width:36px"></div></div>
+  <div class="scroll-content">
+    <div class="scanner-wrap">
+
+      <!-- ÉTAT IDLE : 3 cards document -->
+      <div id="scan-state-idle">
+        <div class="insight-card" style="margin:0 0 20px">
+          <span class="insight-icon">✨</span>
+          <span class="insight-text">Photographiez votre document. L'IA l'analyse et met à jour votre dossier automatiquement.</span>
+        </div>
+
+        <div class="scan-type-grid">
+
+          <!-- ANALYSE SANGUINE -->
+          <button class="scan-type-card analyse" onclick="startScan('analyse')">
+            <div class="scan-type-inner">
+              <div class="scan-type-icon">
+                <svg viewBox="0 0 28 28" fill="none">
+                  <path d="M14 4 Q14 4 14 16 Q14 22 17 22 Q20 22 20 19 Q20 16 17 16 Q14 16 14 13" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+                  <circle cx="14" cy="24" r="2" fill="white" opacity=".6"/>
+                  <rect x="8" y="3" width="12" height="4" rx="2" fill="white" opacity=".4"/>
+                  <circle cx="8" cy="12" r="2.5" fill="white" opacity=".7"/>
+                  <circle cx="8" cy="12" r="1" fill="white"/>
+                </svg>
+              </div>
+              <div class="scan-type-text">
+                <div class="scan-type-title">Analyse sanguine</div>
+                <div class="scan-type-sub">Glycémie · Ferritine · Cortisol · Vitamine D · extraction IA</div>
+              </div>
+              <span class="scan-type-arrow">›</span>
+            </div>
+          </button>
+
+          <!-- ORDONNANCE -->
+          <button class="scan-type-card ordonnance" onclick="startScan('ordonnance')">
+            <div class="scan-type-inner">
+              <div class="scan-type-icon">
+                <svg viewBox="0 0 28 28" fill="none">
+                  <rect x="5" y="3" width="18" height="22" rx="3" stroke="white" stroke-width="1.8"/>
+                  <line x1="9" y1="9" x2="19" y2="9" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="9" y1="13" x2="19" y2="13" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                  <line x1="9" y1="17" x2="15" y2="17" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M17 19 L19 21 L23 17" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="scan-type-text">
+                <div class="scan-type-title">Ordonnance</div>
+                <div class="scan-type-sub">Prescription médicale · médicaments · posologie</div>
+              </div>
+              <span class="scan-type-arrow">›</span>
+            </div>
+          </button>
+
+          <!-- IMAGERIE -->
+          <button class="scan-type-card imagerie" onclick="startScan('imagerie')">
+            <div class="scan-type-inner">
+              <div class="scan-type-icon">
+                <svg viewBox="0 0 28 28" fill="none">
+                  <rect x="3" y="5" width="22" height="18" rx="3" stroke="white" stroke-width="1.8"/>
+                  <ellipse cx="10" cy="14" rx="4" ry="5" stroke="white" stroke-width="1.4" opacity=".7"/>
+                  <ellipse cx="19" cy="14" rx="4" ry="5" stroke="white" stroke-width="1.4" opacity=".7"/>
+                  <line x1="14" y1="9" x2="14" y2="19" stroke="white" stroke-width="1" opacity=".4"/>
+                </svg>
+              </div>
+              <div class="scan-type-text">
+                <div class="scan-type-title">Compte-rendu d'imagerie</div>
+                <div class="scan-type-sub">Radio · IRM · Scanner · échographie</div>
+              </div>
+              <span class="scan-type-arrow">›</span>
+            </div>
+          </button>
+
+        </div>
+
+        <!-- Inputs fichier cachés par type -->
+        <input type="file" id="scan-input-analyse"    class="scan-file-input" accept="image/*" capture="environment" onchange="handleScanDirect(this,'analyse')">
+        <input type="file" id="scan-input-ordonnance" class="scan-file-input" accept="image/*" capture="environment" onchange="handleScanDirect(this,'ordonnance')">
+        <input type="file" id="scan-input-imagerie"   class="scan-file-input" accept="image/*" capture="environment" onchange="handleScanDirect(this,'imagerie')">
+
+        <!-- Config webhook -->
+        <div style="margin-top:28px;padding-top:20px;border-top:1px solid var(--border)">
+          <div style="font-size:10px;font-weight:600;color:var(--text-muted);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px">Configuration Make</div>
+          <input type="text" id="scan-webhook-url" class="scan-webhook-input" placeholder="https://hook.eu1.make.com/votre-webhook-id" oninput="saveWebhookUrl(this.value)" value="https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:6px;line-height:1.5">URL du webhook Make.</div>
+        </div>
+      </div>
+
+      <!-- ÉTAT LOADING -->
+      <div id="scan-state-loading" style="display:none">
+        <div style="text-align:center;padding:48px 20px 24px">
+          <div class="scan-spinner"></div>
+          <div style="font-size:16px;font-weight:600;color:var(--text-primary);margin-top:20px">Analyse en cours…</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:8px;line-height:1.5" id="scan-loading-step">Envoi de l'image à l'IA</div>
+        </div>
+        <div style="margin:0 0 16px;border-radius:14px;overflow:hidden;border:1px solid var(--border)">
+          <img id="scan-thumb-img" style="width:100%;max-height:180px;object-fit:cover;display:block" src="" alt="">
+        </div>
+      </div>
+
+      <!-- ÉTAT RÉSULTAT -->
+      <div id="scan-state-result" style="display:none">
+        <div style="background:var(--green-light);border-left:3px solid var(--green);border-radius:16px;padding:16px 18px;margin-bottom:12px">
+          <div id="scan-result-type-badge" class="scan-result-type-badge analyse">🩸 Analyse sanguine</div>
+          <div style="font-size:14px;font-weight:600;color:#1A6E4A;margin-bottom:4px">✅ Document traité avec succès</div>
+          <div style="font-size:12px;color:#2A9D6E" id="scan-result-date"></div>
+        </div>
+        <div id="scan-result-markers" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px"></div>
+        <button class="scan-capture-btn" onclick="scanReset()">
+          <div class="scan-capture-inner">
+            <div class="scan-capture-icon-wrap">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" fill="white" opacity=".9"/></svg>
+            </div>
+            <div class="scan-capture-text">
+              <div class="scan-capture-title">Nouveau document</div>
+              <div class="scan-capture-sub">Photographier un autre document</div>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      <!-- ÉTAT ERREUR -->
+      <div id="scan-state-error" style="display:none">
+        <div style="background:var(--red-light);border-left:3px solid var(--red);border-radius:16px;padding:16px 18px;margin-bottom:20px">
+          <div style="font-size:14px;font-weight:600;color:#922B21;margin-bottom:4px">⚠️ Envoi impossible</div>
+          <div style="font-size:12px;color:var(--red)" id="scan-error-msg">Veuillez réessayer.</div>
+        </div>
+        <button class="scan-capture-btn" onclick="scanReset()">
+          <div class="scan-capture-inner">
+            <div class="scan-capture-icon-wrap">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z" fill="white" opacity=".9"/></svg>
+            </div>
+            <div class="scan-capture-text"><div class="scan-capture-title">Réessayer</div><div class="scan-capture-sub">Prendre une nouvelle photo</div></div>
+          </div>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- PROTOCOLE DETAIL -->
+<div id="screen-protocole-detail" class="screen">
+  <div class="top-header" style="position:relative">
+    <div style="width:36px"></div>
+    <span class="header-title">Protocole</span>
+    <button onclick="closeProtocoleDetail()" style="width:36px;height:36px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;color:var(--text-secondary);line-height:1;padding:0;flex-shrink:0;">✕</button>
+  </div>
+  <div class="scroll-content">
+    <div id="protocole-detail-content"></div>
+  </div>
+</div>
+
+<!-- CONTACT -->
+<div id="screen-contact" class="screen">
+  <div class="top-header"><button class="header-menu-btn" onclick="showMenu()"><div class="menu-line"></div><div class="menu-line" style="width:20px"></div><div class="menu-line" style="width:16px"></div></button><span class="header-title">Contact</span><div style="width:36px"></div></div>
+  <div class="scroll-content">
+    <div class="contact-wrap">
+      <div class="contact-coach-card">
+        <div style="width:88px;height:88px;border-radius:50%;background:var(--orange-light);margin:0 auto 14px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:var(--orange)">V</div>
+        <div class="contact-name">Votre Case Manager</div>
+        <div class="contact-role">Vitalis Data · Stratégie de Longévité</div>
+        <div class="contact-tagline">"Ensemble, nous affinons votre stratégie de vitalité pour une santé optimale sur le long terme."</div>
+      </div>
+      <div class="contact-actions">
+        <button class="contact-action-btn whatsapp" onclick="window.open('https://wa.me/','_blank')"><span class="contact-action-icon">💬</span>Contacter via WhatsApp</button>
+        <button class="contact-action-btn email" onclick="window.open('mailto:contact@vitalisdata.fr','_blank')"><span class="contact-action-icon">✉️</span>Envoyer un email</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//   VITALIS DATA — JS ES5
+// ═══════════════════════════════════════════
+var SHEET_ID     = '2PACX-1vQLXEdyyqP_maKmkkNmxpyEqzlPsjcytV6MzyIQA61-s9QRn-VZGpNoSq-QsSgFI0G96kXzuH6pyUtu';
+var GID_IMPORT   = 0;
+var GID_USERS    = 894150190;
+var GID_PROTOCOLES = 1807814537;
+var WEBHOOK_KEY  = 'vitalis_webhook_url';
+var WEBHOOK_DEFAULT = 'https://hook.eu1.make.com/oehu9habo3h1sxuw2fu3l4bjepmqy7y2';
+
+var currentUser   = null;
+var allData       = [];
+var userData      = [];
+var protocoleData = [];
+var currentMarker = 'Glycémie';
+var analysesChart = null;
+var dataLoaded    = false;
+
+// ── SEUILS
+var MARKERS_CONFIG = {
+  'Glycémie':{unit:'g/L',note:'La glycémie à jeun idéale se situe entre 0,70 et 1,00 g/L. Au-delà de 1,0, nous surveillons l\'insulino-résistance.',
+    getStatus:function(v){var n=parseFloat(v);if(isNaN(n))return null;if(n<0.70)return{label:'Faible',cls:'danger'};if(n<1.00)return{label:'Optimal',cls:'optimal'};if(n<1.10)return{label:'Limite',cls:'warning'};return{label:'Élevé',cls:'danger'};},
+    points:function(s){return s&&s.cls==='optimal'?25:s&&s.cls==='warning'?20:12;}},
+  'Vitamine D':{unit:'ng/mL',note:'La zone optimale se situe entre 50 et 100 ng/mL. Entre 30 et 50, la zone est protectrice mais peut être optimisée.',
+    getStatus:function(v){var n=parseFloat(v);if(isNaN(n))return null;if(n<30)return{label:'Déficit',cls:'danger'};if(n<50)return{label:'À surveiller',cls:'warning'};if(n<=100)return{label:'Optimal',cls:'optimal'};return{label:'Alerte Excès',cls:'danger'};},
+    points:function(s){return s&&s.cls==='optimal'?25:s&&s.cls==='warning'?20:12;}},
+  'Ferritine':{unit:'ng/mL',note:'La zone optimale de ferritine se situe entre 40 et 150 ng/mL. En dessous de 30, une carence est confirmée.',
+    getStatus:function(v){var n=parseFloat(v);if(isNaN(n))return null;if(n<30)return{label:'Carence',cls:'danger'};if(n<=40)return{label:'À surveiller',cls:'warning'};if(n<150)return{label:'Optimal',cls:'optimal'};return{label:'Excès',cls:'orange'};},
+    points:function(s){return s&&s.cls==='optimal'?25:(s&&(s.cls==='warning'||s.cls==='orange'))?20:12;}},
+  'Cortisol':{unit:'µg/dL',note:'Le cortisol matinal optimal se situe entre 10 et 20 µg/dL. Une valeur trop basse peut indiquer une fatigue surrénalienne.',
+    getStatus:function(v){var n=parseFloat(v);if(isNaN(n))return null;if(n<6)return{label:'Faible',cls:'danger'};if(n<10)return{label:'À surveiller',cls:'orange'};if(n<=20)return{label:'Optimal',cls:'optimal'};if(n<=25)return{label:'À surveiller',cls:'orange'};return{label:'Élevé',cls:'danger'};},
+    points:function(s){return s&&s.cls==='optimal'?25:(s&&(s.cls==='warning'||s.cls==='orange'))?20:12;}}
+};
+var STATUS_COLORS={optimal:'#2A9D6E',warning:'#D4A017',danger:'#C0392B',orange:'#E07B3A'};
+
+// ── CSV PARSER
+function parseCSV(text){var lines=text.trim().split('\n');if(lines.length<2)return[];var headers=parseCSVLine(lines[0]);var result=[];for(var i=1;i<lines.length;i++){var vals=parseCSVLine(lines[i]);var obj={};for(var j=0;j<headers.length;j++)obj[headers[j].trim()]=(vals[j]||'').trim();var ok=false;for(var k in obj)if(obj[k]){ok=true;break;}if(ok)result.push(obj);}return result;}
+function parseCSVLine(line){var result=[],current='',inQ=false;for(var i=0;i<line.length;i++){var ch=line[i];if(ch==='"')inQ=!inQ;else if(ch===','&&!inQ){result.push(current);current='';}else current+=ch;}result.push(current);return result;}
+
+// ── GOOGLE VIZ API (JSONP)
+function fetchSheetViz(gid,callback){
+  var cbName='_vcb'+gid+'_'+Date.now();
+  var done=false;
+  var timer=setTimeout(function(){if(done)return;done=true;window[cbName]=function(){};var s=document.getElementById('vs'+gid);if(s&&s.parentNode)s.parentNode.removeChild(s);callback(new Error('timeout'),null);},10000);
+  window[cbName]=function(resp){
+    if(done)return;done=true;clearTimeout(timer);
+    var s=document.getElementById('vs'+gid);if(s&&s.parentNode)s.parentNode.removeChild(s);
+    try{var table=resp.table;if(!table||!table.cols||!table.rows){callback(null,[]);return;}
+    var headers=[];for(var h=0;h<table.cols.length;h++)headers.push((table.cols[h].label||'').trim());
+    var rows=[];for(var r=0;r<table.rows.length;r++){var rd=table.rows[r];var obj={};for(var c=0;c<headers.length;c++){var cell=rd.c?rd.c[c]:null;var val='';if(cell){if(cell.f!==null&&cell.f!==undefined&&cell.f!=='')val=cell.f+'';else if(cell.v!==null&&cell.v!==undefined)val=cell.v+'';}obj[headers[c]]=val;}rows.push(obj);}
+    callback(null,rows);}catch(e){callback(e,null);}
+  };
+  var s=document.createElement('script');s.id='vs'+gid;
+  s.src='https://docs.google.com/spreadsheets/d/e/'+SHEET_ID+'/gviz/tq?tqx=out:json&tq=&gid='+gid+'&callback='+cbName;
+  s.onerror=function(){if(done)return;done=true;clearTimeout(timer);var sc=document.getElementById('vs'+gid);if(sc&&sc.parentNode)sc.parentNode.removeChild(sc);callback(new Error('script error'),null);};
+  document.head.appendChild(s);
+}
+
+// ── LOAD ALL DATA
+function loadAllData(onComplete){
+  // Chargement IMMÉDIAT depuis les données embarquées — login instantané
+  userData      = getDemoUsers();
+  allData       = getDemoImportData();
+  protocoleData = getDemoProtocoles();
+  dataLoaded    = true;
+  onComplete();
+  // Tentative de refresh réseau en arrière-plan (silencieuse)
+  setTimeout(function(){ refreshFromNetwork(); }, 500);
+}
+
+function refreshFromNetwork(){
+  // Essaie Google Viz API en arrière-plan
+  var done = false;
+  fetchSheetViz(GID_USERS, function(err, rows){
+    if(done) return;
+    if(!err && rows && rows.length > 0){
+      done = true;
+      userData = rows;
+      fetchSheetViz(GID_IMPORT, function(e2, r2){
+        if(!e2 && r2 && r2.length > 0){ allData = r2; }
+        fetchSheetViz(GID_PROTOCOLES, function(e3, r3){
+          if(!e3 && r3 && r3.length > 0){ protocoleData = r3; }
+          // Rafraîchir l'affichage si déjà connecté
+          if(currentUser){ renderHome(); }
+        });
+      });
+    }
+  });
+}
+
+// ── DEMO DATA
+function getDemoUsers(){return[{email:'n.steinfels@hotmail.com','Prénom':'Nathalie',Nom:'Steinfels',Photo:'https://drive.google.com/file/d/101zHEIy1jeT1oJ1FBTAOnd2V2GI7LA-M/view?usp=drive_link','Date de naissance':'',Poids:''}];}
+function getDemoImportData(){return[
+  {email:'n.steinfels@hotmail.com',Date:'2026-05-17',Ferritine:'34','Glycémie':'1.05',Cortisol:'11','Vitamine D':'35','Statut IA':'Analysé'},
+  {email:'n.steinfels@hotmail.com',Date:'2026-04-15',Ferritine:'34','Glycémie':'1.05',Cortisol:'11','Vitamine D':'35','Statut IA':'Analysé'},
+  {email:'n.steinfels@hotmail.com',Date:'2026-01-01',Ferritine:'28','Glycémie':'1.30',Cortisol:'8','Vitamine D':'22','Statut IA':'Analysé'},
+  {email:'n.steinfels@hotmail.com',Date:'2025-09-10',Ferritine:'42','Glycémie':'1.10',Cortisol:'14','Vitamine D':'38','Statut IA':'Analysé'},
+  {email:'n.steinfels@hotmail.com',Date:'2025-02-01',Ferritine:'38','Glycémie':'1.05',Cortisol:'12','Vitamine D':'30','Statut IA':'Analysé'},
+  {email:'n.steinfels@hotmail.com',Date:'2024-09-15',Ferritine:'55','Glycémie':'0.90',Cortisol:'15','Vitamine D':'60','Statut IA':'Analysé'},
+  {email:'n.steinfels@hotmail.com',Date:'2023-12-30',Ferritine:'25','Glycémie':'0.80',Cortisol:'5','Vitamine D':'18','Statut IA':'Analysé'}
+];}
+function getDemoProtocoles(){return[
+  {Titre:'Régulation de la glycémie',Description:'Limiter les sucres rapides, privilégier des repas à index glycémique bas. Intégrer la cannelle de Ceylan et le chrome.','Catégorie':'Glycémie',Icone:'🥗'},
+  {Titre:'Supplémentation Vitamine D',Description:'Cure de vitamine D3 + K2 en association avec des corps gras au repas. Objectif : 50-70 ng/mL.','Catégorie':'Vitamine D',Icone:'☀️'},
+  {Titre:'Soutien surrénalien',Description:'Ashwagandha, magnésium bisglycinate et gestion du stress chronique. Rythme veille/sommeil régulier.','Catégorie':'Cortisol',Icone:'🌿'},
+  {Titre:'Ferritine & fer héminique',Description:'Augmenter les apports en viande rouge et abats. Vitamine C au repas pour favoriser l\'absorption.','Catégorie':'Ferritine',Icone:'🥩'}
+];}
+
+// ── AUTH
+function handleLogin(){
+  var email=document.getElementById('login-email').value.trim().toLowerCase();
+  var errEl=document.getElementById('login-error');
+  var btn=document.getElementById('login-btn');
+  if(!email){errEl.textContent='Veuillez saisir votre adresse email.';return;}
+  if(btn.disabled)return;
+  errEl.textContent='';btn.textContent='⏳ Connexion en cours…';btn.disabled=true;btn.style.opacity='0.7';
+  loadAllData(function(){
+    btn.disabled=false;btn.style.opacity='1';btn.textContent='Accéder à mon espace';
+    var normalize=function(s){return(s||'').trim().toLowerCase().replace(/\s/g,'');};
+    var user=null;
+    for(var i=0;i<userData.length;i++){if(normalize(userData[i].email)===normalize(email)){user=userData[i];break;}}
+    if(!user){
+      var known=userData.map(function(u){return normalize(u.email);}).filter(Boolean);
+      errEl.textContent=known.length===0?'⚠️ Données non chargées. Vérifiez votre connexion.':'❌ Email non reconnu. '+known.length+' compte(s) chargé(s).';
+      return;
+    }
+    currentUser=user;
+    var lg=document.getElementById('screen-login');
+    lg.classList.remove('active');
+    lg.style.display='none';
+    document.body.style.overflow='';
+    document.getElementById('bottom-nav').style.display='flex';
+    scanInit();
+    navigate('accueil');
+  });
+}
+document.getElementById('login-email').addEventListener('keydown',function(e){if(e.key==='Enter')handleLogin();});
+
+// ── NAVIGATION
+var SCREENS=['accueil','analyses','protocole','graphique','historique','scanner','contact','protocole-detail'];
+var NAV_IDS=['accueil','scanner','analyses','protocole','historique','graphique'];
+function navigate(screen){
+  // Fermer tous les sous-écrans historique avant de naviguer
+  var subs=['ordonnances','analyses','imagerie','detail','detail-ordonnance','detail-imagerie'];
+  for(var s=0;s<subs.length;s++){var sub=document.getElementById('screen-historique-'+subs[s]);if(sub)sub.classList.remove('active');}
+  for(var i=0;i<SCREENS.length;i++){var el=document.getElementById('screen-'+SCREENS[i]);if(el)el.classList[SCREENS[i]===screen?'add':'remove']('active');}
+  for(var j=0;j<NAV_IDS.length;j++){var btn=document.getElementById('nav-'+NAV_IDS[j]);if(btn)btn.classList[NAV_IDS[j]===screen?'add':'remove']('active');}
+  if(screen==='accueil')renderHome();
+  if(screen==='analyses')renderAnalyses();
+  if(screen==='protocole')renderProtocole();
+  if(screen==='graphique')renderGraphique();
+  if(screen==='historique')renderHistorique();
+}
+function showMenu(){if(confirm('Déconnexion ?')){currentUser=null;dataLoaded=false;userData=[];allData=[];protocoleData=[];document.getElementById('bottom-nav').style.display='none';for(var i=0;i<SCREENS.length;i++){var el=document.getElementById('screen-'+SCREENS[i]);if(el)el.classList.remove('active');}var lg2=document.getElementById('screen-login');lg2.style.display='';lg2.classList.add('active');document.getElementById('login-btn').textContent='Accéder à mon espace';document.getElementById('login-email').value='';document.getElementById('login-error').textContent='';}}
+
+// ── HELPERS
+function getUserRows(){var email=(currentUser.email||'').trim().toLowerCase();var rows=allData.filter(function(r){return(r.email||'').trim().toLowerCase()===email;});rows.sort(function(a,b){return new Date(b.Date)-new Date(a.Date);});return rows;}
+function getLatestRow(){var r=getUserRows();return r.length?r[0]:null;}
+function getMarkerStatus(marker,value){var cfg=MARKERS_CONFIG[marker];return cfg?cfg.getStatus(value):null;}
+function calcVitality(row){if(!row)return 0;var pts=0,markers=['Glycémie','Vitamine D','Ferritine','Cortisol'];for(var i=0;i<markers.length;i++){var s=getMarkerStatus(markers[i],row[markers[i]]);if(s)pts+=MARKERS_CONFIG[markers[i]].points(s);}return pts;}
+function formatDate(d){if(!d)return'';var dt=new Date(d);if(isNaN(dt.getTime()))return d;var months=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];return dt.getDate()+' '+months[dt.getMonth()]+' '+dt.getFullYear();}
+function getInitials(u){return((u['Prénom']||u['Prenom']||'')[0]||'').toUpperCase()+((u.Nom||'')[0]||'').toUpperCase();}
+function getPhotoUrl(url){if(!url)return null;var m=url.match(/\/d\/([a-zA-Z0-9_-]+)/);return m?'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w200':url;}
+
+// ── RENDER HOME
+function renderHome(){
+  if(!currentUser)return;
+  var prenom=currentUser['Prénom']||currentUser['Prenom']||currentUser.email.split('@')[0];
+  var nom=currentUser.Nom||'';
+  document.getElementById('home-name').textContent=prenom+' '+nom;
+  document.getElementById('analyses-name').textContent=prenom+' '+nom;
+  var initials=getInitials(currentUser);
+  var avatarEl=document.getElementById('home-avatar-placeholder');
+  if(avatarEl)avatarEl.textContent=initials||prenom[0].toUpperCase();
+  var photoUrl=getPhotoUrl(currentUser.Photo);
+  if(photoUrl&&avatarEl){var img=document.createElement('img');img.className='profile-avatar';img.src=photoUrl;img.onerror=function(){};avatarEl.parentNode.replaceChild(img,avatarEl);}
+  var aAvatar=document.getElementById('analyses-avatar');
+  if(aAvatar){if(photoUrl){aAvatar.style.backgroundImage='url('+photoUrl+')';aAvatar.style.backgroundSize='cover';aAvatar.textContent='';}else{aAvatar.textContent=initials;}}
+  var latest=getLatestRow();var score=calcVitality(latest);
+  var scoreEl=document.getElementById('home-vitality-score');var barEl=document.getElementById('home-vitality-bar');
+  if(scoreEl)scoreEl.textContent=score+'%';
+  if(barEl)setTimeout(function(){barEl.style.width=score+'%';},100);
+  var grid=document.getElementById('home-markers-grid');if(!grid)return;grid.innerHTML='';
+  if(!latest){grid.innerHTML='<div class="no-data" style="grid-column:1/-1">Aucune donnée disponible.<br>Déposez votre première analyse.</div>';return;}
+  var markerOrder=['Glycémie','Ferritine','Cortisol','Vitamine D'];
+  for(var i=0;i<markerOrder.length;i++){(function(marker){var val=latest[marker];var status=getMarkerStatus(marker,val);if(!status)return;var cfg=MARKERS_CONFIG[marker];var valStr=val?parseFloat(val).toLocaleString('fr-FR'):'—';var card=document.createElement('div');card.className='marker-card status-'+status.cls;card.onclick=function(){currentMarker=marker;navigate('analyses');};card.innerHTML='<div class="marker-name status-'+status.cls+'">'+marker.toUpperCase()+'</div><div class="marker-value">'+valStr+'</div><div class="marker-unit">'+cfg.unit+'</div><div class="status-badge '+status.cls+'"><div class="status-dot '+status.cls+'"></div>'+status.label+'</div>';grid.appendChild(card);})(markerOrder[i]);}
+}
+
+// ── RENDER ANALYSES
+function renderAnalyses(){renderAnalysesTab(currentMarker);}
+function selectMarkerTab(marker,el){currentMarker=marker;var tabs=document.querySelectorAll('.marker-tab');for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');el.classList.add('active');renderAnalysesTab(marker);}
+function renderAnalysesTab(marker){
+  var cfg=MARKERS_CONFIG[marker];
+  var titleEl=document.getElementById('analyses-chart-title');var noteEl=document.getElementById('analyses-chart-note');
+  if(titleEl)titleEl.textContent='La '+marker;if(noteEl)noteEl.textContent=cfg.note;
+  var rows=getUserRows().filter(function(r){return r[marker]&&parseFloat(r[marker])>0;}).reverse();
+  var trendEl=document.getElementById('analyses-trend');var trendText=document.getElementById('analyses-trend-text');
+  if(trendEl&&trendText){if(rows.length>=2){var last=parseFloat(rows[rows.length-1][marker]);var prev=parseFloat(rows[rows.length-2][marker]);trendEl.className='trend-badge';if(last>prev){trendEl.classList.add('down');trendText.textContent='Par rapport à la dernière analyse : Augmentation';}else if(last<prev){trendEl.classList.add('stable');trendText.textContent='Par rapport à la dernière analyse : Diminution';}else{trendEl.classList.add('stable');trendText.textContent='Par rapport à la dernière analyse : Stable';}}else{trendEl.className='trend-badge stable';trendText.textContent='Première analyse enregistrée';}}
+  var labels=rows.map(function(r,i){return i+1;});var values=rows.map(function(r){return parseFloat(r[marker]);});var colors=values.map(function(v){var s=cfg.getStatus(v);return s?STATUS_COLORS[s.cls]:'#A0A0A0';});
+  if(analysesChart){try{analysesChart.destroy();}catch(e){}analysesChart=null;}
+  var canvas=document.getElementById('analyses-chart');
+  if(canvas&&window.Chart){var ctx=canvas.getContext('2d');analysesChart=new Chart(ctx,{type:'line',data:{labels:labels,datasets:[{data:values,borderColor:'#E8521A',backgroundColor:'rgba(232,82,26,0.06)',borderWidth:2,pointRadius:6,pointBackgroundColor:colors,pointBorderColor:'#fff',pointBorderWidth:2,tension:0.3,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.parsed.y.toFixed(2)+' '+cfg.unit;}}}},scales:{x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11},color:'#A0A0A0'}},y:{grid:{color:'rgba(0,0,0,0.04)'},ticks:{font:{family:'DM Sans',size:11},color:'#A0A0A0'}}}}});}
+  var grid=document.getElementById('analyses-history-grid');if(!grid)return;grid.innerHTML='';
+  var allRows=getUserRows().filter(function(r){return r[marker]&&parseFloat(r[marker])>0;});
+  if(!allRows.length){grid.innerHTML='<div class="no-data" style="grid-column:1/-1">Aucune donnée pour ce marqueur.</div>';return;}
+  for(var i=0;i<allRows.length;i++){(function(row){var val=parseFloat(row[marker]);var status=cfg.getStatus(val);if(!status)return;var item=document.createElement('div');item.className='history-item';var valStr=val.toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2});item.innerHTML='<div class="history-item-status"><div class="status-dot '+status.cls+'"></div><span style="color:'+STATUS_COLORS[status.cls]+'">'+status.label+'</span></div><div class="history-item-value">'+valStr+' <span class="history-item-unit">'+cfg.unit+'</span></div><div class="history-bar '+status.cls+'" style="width:60%"></div><div class="history-item-date">'+formatDate(row.Date)+'</div>';grid.appendChild(item);})(allRows[i]);}
+  var pbtn=document.getElementById('analyses-protocol-btn');if(pbtn){pbtn.textContent='📋 Protocole : '+marker;pbtn.onclick=function(){openProtocoleDetail(marker);};}
+}
+
+// ── RENDER PROTOCOLE
+var MARKER_KEYS=['Glycémie','Vitamine D','Ferritine','Cortisol'];
+function renderProtocole(){
+  // Mettre à jour le titre hero avec le prénom
+  var heroTitle = document.getElementById('protocole-hero-title');
+  if (heroTitle && currentUser) {
+    var prenom = currentUser['Prénom'] || currentUser['Prenom'] || '';
+    if (prenom) heroTitle.textContent = prenom + ' voici votre plan optimisé pour les 3 prochains mois';
+  }
+
+  // Menu statique géré en HTML
+}
+
+// ── RENDER GRAPHIQUE
+var RANGES={'Glycémie':{min:0.5,max:1.5},'Vitamine D':{min:0,max:120},'Ferritine':{min:0,max:200},'Cortisol':{min:0,max:35}};
+function renderGraphique(){
+  var latest=getLatestRow();var list=document.getElementById('graphique-list');if(!list)return;list.innerHTML='';
+  if(!latest){list.innerHTML='<div class="no-data">Aucune donnée disponible.</div>';return;}
+  var order=['Glycémie','Cortisol','Ferritine','Vitamine D'];
+  for(var i=0;i<order.length;i++){(function(marker){var val=parseFloat(latest[marker]);var cfg=MARKERS_CONFIG[marker];var status=cfg.getStatus(val);if(!status)return;var range=RANGES[marker];var pct=Math.min(100,Math.max(5,((val-range.min)/(range.max-range.min))*100));var valStr=isNaN(val)?'—':val.toLocaleString('fr-FR');var el=document.createElement('div');el.className='graphique-item';var barId='gbar'+marker.replace(/\s/g,'');el.innerHTML='<div class="graphique-item-header"><span class="graphique-item-name">'+marker+'</span><span class="graphique-item-value">'+valStr+' <small style="font-size:11px;color:#A0A0A0">'+cfg.unit+'</small></span></div><div class="status-badge '+status.cls+'" style="margin-bottom:8px"><div class="status-dot '+status.cls+'"></div>'+status.label+'</div><div class="graphique-bar-bg"><div class="graphique-bar-fill" id="'+barId+'" style="width:0%;background:'+STATUS_COLORS[status.cls]+';transition:width .8s ease"></div></div>';list.appendChild(el);setTimeout(function(){var bar=document.getElementById(barId);if(bar)bar.style.width=pct+'%';},100);})(order[i]);}
+}
+
+// ── RENDER HISTORIQUE
+function renderHistorique(){
+  // La page menu est statique - rien à rendre
+}
+
+// Stockage des scans par type (alimenté par handleScanSuccess)
+var scanHistory = { ordonnances: [], analyses: [], imagerie: [] };
+
+// Appelé depuis handleScanSuccess pour sauvegarder dans l'historique
+function saveScanToHistory(docType, resp, dateStr, thumbSrc) {
+  var entry = {
+    date: dateStr,
+    thumb: thumbSrc || '',
+    resp: resp
+  };
+  // Résumé 1 ligne selon le type
+  if (docType === 'ordonnances' || docType === 'ordonnance') {
+    var meds = resp.medicaments && resp.medicaments.length ? resp.medicaments[0].nom : '';
+    entry.resume = (resp.medecin || 'Dr.') + (meds ? ' — ' + meds : '');
+    entry.dateDoc = resp.date || dateStr;
+    scanHistory.ordonnances.unshift(entry);
+  } else if (docType === 'analyses' || docType === 'analyse') {
+    var vals = [];
+    if (resp['Glycémie']) vals.push('Glycémie ' + resp['Glycémie']);
+    if (resp['Ferritine']) vals.push('Ferritine ' + resp['Ferritine']);
+    entry.resume = vals.length ? vals.join(' · ') : 'Bilan sanguin';
+    entry.dateDoc = resp.date || dateStr;
+    scanHistory.analyses.unshift(entry);
+  } else if (docType === 'imagerie') {
+    entry.resume = resp.type_examen || 'Compte-rendu imagerie';
+    entry.dateDoc = resp.date || dateStr;
+    scanHistory.imagerie.unshift(entry);
+  }
+  // Persister dans localStorage
+  try { localStorage.setItem('vitalis_scan_history', JSON.stringify(scanHistory)); } catch(e) {}
+}
+
+// Charger l'historique depuis localStorage au démarrage
+function loadScanHistory() {
+  try {
+    var saved = localStorage.getItem('vitalis_scan_history');
+    if (saved) scanHistory = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function openHistoriqueSection(section) {
+  // Masquer tous les screens normaux
+  for (var i = 0; i < SCREENS.length; i++) {
+    var el = document.getElementById('screen-' + SCREENS[i]);
+    if (el) el.classList.remove('active');
+  }
+  // Masquer autres sous-sections
+  var subs = ['ordonnances', 'analyses', 'imagerie'];
+  for (var j = 0; j < subs.length; j++) {
+    var s = document.getElementById('screen-historique-' + subs[j]);
+    if (s) s.classList.remove('active');
+  }
+  var target = document.getElementById('screen-historique-' + section);
+  if (target) target.classList.add('active');
+  // Garder nav historique active
+  for (var k = 0; k < document.querySelectorAll('.nav-item').length; k++) {}
+  var navH = document.getElementById('nav-historique');
+  if (navH) navH.classList.add('active');
+  renderHistoriqueSection(section);
+}
+
+function closeHistoriqueSection() {
+  var subs = ['ordonnances', 'analyses', 'imagerie'];
+  for (var j = 0; j < subs.length; j++) {
+    var s = document.getElementById('screen-historique-' + subs[j]);
+    if (s) s.classList.remove('active');
+  }
+  navigate('historique');
+}
+
+function openDetailAnalyse(item) {
+  // Masquer la liste analyses
+  var listScreen = document.getElementById('screen-historique-analyses');
+  if (listScreen) listScreen.classList.remove('active');
+  // Afficher la page détail
+  var detailScreen = document.getElementById('screen-historique-detail');
+  if (detailScreen) detailScreen.classList.add('active');
+  // Remplir le contenu
+  var content = document.getElementById('detail-analyse-content');
+  if (!content) return;
+  var resp = item.resp || {};
+  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
+  var markers = ['Glycémie','Ferritine','Cortisol','Vitamine D'];
+  var markersHtml = '';
+  for (var i = 0; i < markers.length; i++) {
+    var m = markers[i];
+    var val = resp[m] || resp[m.replace(' ','_')] || null;
+    var cfg = MARKERS_CONFIG[m];
+    var status = val && cfg ? cfg.getStatus(val) : null;
+    var color = status ? STATUS_COLORS[status.cls] : '#A0A0A0';
+    markersHtml += '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">' +
+      '<div>' +
+        '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:' + color + ';margin-bottom:4px;">' + m + '</div>' +
+        '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-weight:600;color:var(--text-primary);">' + (val ? parseFloat(val).toLocaleString('fr-FR') : '—') + '</div>' +
+        (cfg ? '<div style="font-size:11px;color:var(--text-muted);">' + cfg.unit + '</div>' : '') +
+      '</div>' +
+      (status ? '<div class="status-badge ' + status.cls + '"><div class="status-dot ' + status.cls + '"></div>' + status.label + '</div>' : '') +
+    '</div>';
+  }
+  var thumbHtml = item.thumb
+    ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);">' +
+      '<img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Scan analyse"></div>'
+    : '';
+  content.innerHTML =
+    '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' +
+    thumbHtml +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' + markersHtml + '</div>';
+}
+
+function closeDetailAnalyse() {
+  var detailScreen = document.getElementById('screen-historique-detail');
+  if (detailScreen) detailScreen.classList.remove('active');
+  openHistoriqueSection('analyses');
+}
+
+function openDetailOrdonnance(item) {
+  var listScreen = document.getElementById('screen-historique-ordonnances');
+  if (listScreen) listScreen.classList.remove('active');
+  var detailScreen = document.getElementById('screen-historique-detail-ordonnance');
+  if (detailScreen) detailScreen.classList.add('active');
+  var content = document.getElementById('detail-ordonnance-content');
+  if (!content) return;
+  var resp = item.resp || {};
+  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
+  var thumbHtml = item.thumb
+    ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);"><img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Ordonnance"></div>'
+    : '';
+  var medecinHtml = (resp.medecin || resp.specialite)
+    ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:12px;">' +
+      '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--green);margin-bottom:6px;">MÉDECIN</div>' +
+      '<div style="font-size:15px;font-weight:600;color:var(--text-primary);">👨‍⚕️ ' + (resp.medecin || '') + '</div>' +
+      (resp.specialite ? '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">' + resp.specialite + '</div>' : '') +
+      '</div>' : '';
+  var medsHtml = '';
+  if (resp.medicaments && resp.medicaments.length) {
+    for (var i = 0; i < resp.medicaments.length; i++) {
+      var med = resp.medicaments[i];
+      medsHtml += '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);border-left:3px solid var(--green);margin-bottom:10px;">' +
+        '<div style="font-size:13px;font-weight:600;color:var(--text-primary);">' + (med.nom || '') +
+        (med.dosage ? ' <span style="font-weight:400;color:var(--text-muted);">' + med.dosage + '</span>' : '') + '</div>' +
+        (med.posologie ? '<div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">⏱ ' + med.posologie + '</div>' : '') +
+        (med.duree ? '<div style="font-size:11px;color:var(--text-muted);margin-top:2px;">📅 ' + med.duree + '</div>' : '') +
+        '</div>';
+    }
+  } else {
+    medsHtml = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px;">Ordonnance enregistrée</div>';
+  }
+  var notesHtml = resp.notes ? '<div style="background:#FDF8EC;border-radius:14px;padding:14px 16px;border-left:3px solid var(--yellow);margin-top:4px;font-size:12px;color:var(--text-secondary);line-height:1.5;">📋 ' + resp.notes + '</div>' : '';
+  content.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' + thumbHtml + medecinHtml + medsHtml + notesHtml;
+}
+
+function closeDetailOrdonnance() {
+  var detailScreen = document.getElementById('screen-historique-detail-ordonnance');
+  if (detailScreen) detailScreen.classList.remove('active');
+  openHistoriqueSection('ordonnances');
+}
+
+function openDetailImagerie(item) {
+  var listScreen = document.getElementById('screen-historique-imagerie');
+  if (listScreen) listScreen.classList.remove('active');
+  var detailScreen = document.getElementById('screen-historique-detail-imagerie');
+  if (detailScreen) detailScreen.classList.add('active');
+  var content = document.getElementById('detail-imagerie-content');
+  if (!content) return;
+  var resp = item.resp || {};
+  var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
+  var thumbHtml = item.thumb
+    ? '<div style="margin-bottom:20px;border-radius:16px;overflow:hidden;border:1px solid var(--border);"><img src="' + item.thumb + '" style="width:100%;display:block;max-height:280px;object-fit:contain;background:#f5f5f5;" alt="Imagerie"></div>'
+    : '';
+  var examHtml = resp.type_examen
+    ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);border-left:3px solid #3B6B9E;margin-bottom:10px;">' +
+      '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#3B6B9E;margin-bottom:6px;">EXAMEN</div>' +
+      '<div style="font-size:15px;font-weight:600;color:var(--text-primary);">🫁 ' + resp.type_examen + '</div>' +
+      (resp.region ? '<div style="font-size:12px;color:var(--text-muted);margin-top:3px;">' + resp.region + '</div>' : '') +
+      '</div>' : '';
+  var conclusionsHtml = resp.conclusions
+    ? '<div style="background:var(--white);border-radius:14px;padding:14px 16px;border:1px solid var(--border);margin-bottom:10px;">' +
+      '<div style="font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#3B6B9E;margin-bottom:6px;">CONCLUSIONS</div>' +
+      '<div style="font-size:13px;color:var(--text-secondary);line-height:1.6;">' + resp.conclusions + '</div></div>' : '';
+  var recoHtml = resp.recommandations
+    ? '<div style="background:#EBF2FA;border-radius:14px;padding:14px 16px;border-left:3px solid #3B6B9E;">' +
+      '<div style="font-size:12px;color:#2A4E7A;line-height:1.5;">📋 ' + resp.recommandations + '</div></div>' : '';
+  content.innerHTML = '<div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">📅 ' + dateAffichee + '</div>' + thumbHtml + examHtml + conclusionsHtml + recoHtml;
+}
+
+function closeDetailImagerie() {
+  var detailScreen = document.getElementById('screen-historique-detail-imagerie');
+  if (detailScreen) detailScreen.classList.remove('active');
+  openHistoriqueSection('imagerie');
+}
+
+function renderHistoriqueSection(section) {
+  var listEl = document.getElementById('list-' + section);
+  if (!listEl) return;
+  listEl.innerHTML = '';
+
+  // Données depuis les scans + depuis allData (pour analyses)
+  var items = [];
+
+  if (section === 'analyses') {
+    // Données depuis Google Sheets (allData)
+    var rows = getUserRows();
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      var vals = [];
+      if (row['Glycémie']) vals.push('Glycémie ' + parseFloat(row['Glycémie']).toLocaleString('fr-FR'));
+      if (row['Ferritine']) vals.push('Ferritine ' + row['Ferritine']);
+      if (row['Cortisol']) vals.push('Cortisol ' + row['Cortisol']);
+      items.push({
+        dateDoc: row.Date || '',
+        resume: vals.length ? vals.join(' · ') : 'Bilan sanguin',
+        thumb: row['image_url'] || '',
+        resp: {'Glycémie':row['Glycémie']||'','Ferritine':row['Ferritine']||'','Cortisol':row['Cortisol']||'','Vitamine D':row['Vitamine D']||''},
+        fromSheets: true
+      });
+    }
+    // + scans locaux non présents dans Sheets (déduplication par date)
+    var sheetsDates = {};
+    for (var d = 0; d < items.length; d++) {
+      var dk = (items[d].dateDoc || items[d].date || '').substring(0, 10);
+      if (dk) sheetsDates[dk] = true;
+    }
+    for (var j = 0; j < scanHistory.analyses.length; j++) {
+      var localDate = (scanHistory.analyses[j].date || '').substring(0, 10);
+      if (!sheetsDates[localDate]) items.unshift(scanHistory.analyses[j]);
+    }
+  } else {
+    // Lire depuis Sheets (allData) + localStorage pour ordonnances et imagerie
+    var rows2 = getUserRows().filter(function(r){ return r.doc_type === section || (section==='ordonnances'&&r.doc_type==='ordonnance'); });
+    for(var ri=0;ri<rows2.length;ri++){
+      var row2=rows2[ri];
+      var resume2='';
+      if(section==='ordonnances'){
+        resume2=row2.medecin?('Dr '+row2.medecin):'Ordonnance';
+        if(row2.specialite)resume2+=' · '+row2.specialite;
+      } else {
+        resume2=row2.type_examen||'Imagerie médicale';
+        if(row2.region)resume2+=' · '+row2.region;
+      }
+      items.push({
+        dateDoc:row2.Date||'',
+        resume:resume2,
+        thumb:row2['image_url']||'',
+        resp:row2,
+        fromSheets:true
+      });
+    }
+    // + localStorage (déduplication par date)
+    var sheetsDates2={};
+    for(var d2=0;d2<items.length;d2++){var dk2=(items[d2].dateDoc||'').substring(0,10);if(dk2)sheetsDates2[dk2]=true;}
+    var localItems=scanHistory[section]||[];
+    for(var j2=0;j2<localItems.length;j2++){
+      var ld=(localItems[j2].date||'').substring(0,10);
+      if(!sheetsDates2[ld])items.push(localItems[j2]);
+    }
+    items.sort(function(a,b){return new Date(b.dateDoc||b.date||0)-new Date(a.dateDoc||a.date||0);});
+  }
+
+  if (!items.length) {
+    listEl.innerHTML = '<div class="historique-empty"><div class="historique-empty-icon">' +
+      (section === 'ordonnances' ? '📄' : section === 'analyses' ? '🩸' : '🫁') +
+      '</div>Aucun document.<br>Utilisez le Scanner pour<br>photographier vos documents.</div>';
+    return;
+  }
+
+  for (var k = 0; k < items.length; k++) {
+    (function(item, idx) {
+      var el = document.createElement('div');
+      el.className = 'historique-doc-item';
+      if (section === 'analyses') {
+        el.onclick = (function(it){ return function(){ openDetailAnalyse(it); }; })(item);
+        el.style.cursor = 'pointer';
+      } else if (section === 'ordonnances') {
+        el.onclick = (function(it){ return function(){ openDetailOrdonnance(it); }; })(item);
+        el.style.cursor = 'pointer';
+      } else if (section === 'imagerie') {
+        el.onclick = (function(it){ return function(){ openDetailImagerie(it); }; })(item);
+        el.style.cursor = 'pointer';
+      }
+      var thumbHtml = item.thumb
+        ? '<div class="historique-doc-thumb"><img src="' + item.thumb + '" alt="scan"></div>'
+        : '<div class="historique-doc-thumb" style="display:flex;align-items:center;justify-content:center;font-size:24px;">' +
+          (section === 'ordonnances' ? '📄' : section === 'analyses' ? '🩸' : '🫁') + '</div>';
+      var dateAffichee = item.dateDoc ? formatDateFr(item.dateDoc) : formatDate(item.date || '');
+      el.innerHTML = thumbHtml +
+        '<div class="historique-doc-info">' +
+          '<div class="historique-doc-type">' + (section === 'ordonnances' ? 'Ordonnance' : section === 'analyses' ? 'Analyse sanguine' : 'Imagerie') + '</div>' +
+          '<div class="historique-doc-resume">' + (item.resume || 'Document') + '</div>' +
+          '<div class="historique-doc-date">📅 ' + dateAffichee + '</div>' +
+        '</div>' +
+        '<span class="historique-doc-arrow">›</span>';
+      listEl.appendChild(el);
+    })(items[k], k);
+  }
+}
+
+function formatDateFr(d) {
+  if (!d) return '';
+  // Gérer format DD-MM-YYYY (GPT-4o) ou YYYY-MM-DD (Sheets)
+  var parts;
+  if (d.indexOf('-') !== -1) {
+    parts = d.split('-');
+    if (parts[0].length === 4) {
+      // YYYY-MM-DD
+      return formatDate(d);
+    } else {
+      // DD-MM-YYYY
+      var months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+      var day = parseInt(parts[0], 10);
+      var month = parseInt(parts[1], 10) - 1;
+      var year = parts[2];
+      return day + ' ' + months[month] + ' ' + year;
+    }
+  }
+  return d;
+}
+
+// ── SCANNER : 3 TYPES → WEBHOOK MAKE + PROMPTS ADAPTÉS
+var scanCurrentType = 'analyse';
+var SCAN_TYPES = {
+  analyse:    {label:'🩸 Analyse sanguine',      badge:'analyse',    loading:'Extraction des marqueurs biologiques…'},
+  ordonnance: {label:'📄 Ordonnance',             badge:'ordonnance', loading:'Lecture de l\'ordonnance médicale…'},
+  imagerie:   {label:'🫁 Compte-rendu d\'imagerie',badge:'imagerie',   loading:'Analyse du compte-rendu d\'imagerie…'}
+};
+var SCAN_PROMPTS = {
+  analyse: 'Tu es un expert médical de Datavitalis. Extrais avec précision les données de cette analyse biologique.\n\nInstructions strictes :\n1. Recherche ces 4 marqueurs : Glycémie, Ferritine, Cortisol matinal, Vitamine D.\n2. Valeurs en NOMBRE JSON (sans guillemets). Point comme séparateur décimal.\n3. Valeur absente = null (jamais 0).\n4. DATE au format DD-MM-YYYY. Si absente, date du jour.\n5. Réponds UNIQUEMENT avec le JSON brut, sans balise, sans texte.\n\n{"date":"DD-MM-YYYY","Glycémie":1.07,"Ferritine":null,"Cortisol":null,"Vitamine D":null}',
+  ordonnance: "Tu es un assistant d'extraction de données médicales de Datavitalis. Analyse le texte écrit visible sur ce document médical. Tâche : extraire médicaments, posologie, date, spécialité. Ne cherche pas à identifier les personnes. DATE format DD-MM-YYYY ou null. Règle absolue : JSON brut uniquement, zéro balise markdown, commence par { et finit par }.\n\n{\"date\":null,\"medecin\":null,\"specialite\":null,\"medicaments\":[{\"nom\":\"nom\",\"dosage\":\"mg\",\"posologie\":\"1x/jour\",\"duree\":\"7 jours\"}],\"renouvellement\":false,\"notes\":null}",
+  imagerie: 'Tu es un expert médical de Datavitalis. Analyse le TEXTE de ce compte-rendu d\'imagerie médicale (radio, IRM, scanner, échographie). IMPORTANT : Ne tente jamais d\'identifier les personnes. Concentre-toi exclusivement sur le texte médical écrit : type d\'examen, conclusions, recommandations. Ignore les visages et photos de patients.\n\nInstructions : DATE au format DD-MM-YYYY. Si un champ est absent, utilise null. Réponds UNIQUEMENT avec le JSON brut, sans texte explicatif, sans balise.\n\n{"date":"DD-MM-YYYY","type_examen":"IRM lombaire","region":"Colonne L1-S1","medecin_radiologue":"Dr. Nom","conclusions":"Description principale","anomalies":[],"recommandations":"Suivi recommandé","urgence":false}'
+};
+
+function scanInit(){
+  loadScanHistory();
+  var saved='';try{saved=localStorage.getItem(WEBHOOK_KEY)||WEBHOOK_DEFAULT;}catch(e){saved=WEBHOOK_DEFAULT;}
+  var inp=document.getElementById('scan-webhook-url');if(inp)inp.value=saved||WEBHOOK_DEFAULT;
+}
+function saveWebhookUrl(val){try{localStorage.setItem(WEBHOOK_KEY,val);}catch(e){}}
+function getWebhookUrl(){var inp=document.getElementById('scan-webhook-url');if(inp&&inp.value.trim())return inp.value.trim();try{return localStorage.getItem(WEBHOOK_KEY)||WEBHOOK_DEFAULT;}catch(e){return WEBHOOK_DEFAULT;}}
+function scanShowState(state){var states=['idle','loading','result','error'];for(var i=0;i<states.length;i++){var el=document.getElementById('scan-state-'+states[i]);if(el)el.style.display=states[i]===state?'block':'none';}}
+function scanReset(){scanShowState('idle');var types=['analyse','ordonnance','imagerie'];for(var i=0;i<types.length;i++){var inp=document.getElementById('scan-input-'+types[i]);if(inp)inp.value='';}}
+function setLoadingStep(msg){var el=document.getElementById('scan-loading-step');if(el)el.textContent=msg;}
+
+function startScan(type){
+  scanCurrentType=type;
+  var inp=document.getElementById('scan-input-'+type);
+  if(inp)inp.click();
+}
+
+function handleScanDirect(input,type){
+  var file=input.files&&input.files[0];if(!file)return;
+  scanCurrentType=type||'analyse';
+  var webhookUrl=getWebhookUrl();
+  if(!webhookUrl){scanShowState('error');var errEl=document.getElementById('scan-error-msg');if(errEl)errEl.textContent='Configurez l\'URL du webhook Make ci-dessous.';return;}
+  var typeInfo=SCAN_TYPES[scanCurrentType]||SCAN_TYPES.analyse;
+  scanShowState('loading');setLoadingStep(typeInfo.loading);
+  input.value='';
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var dataUrl=e.target.result;
+    // Compression canvas — critique pour iOS (photos 5-10MB, HEIC converti en JPEG)
+    var img=new Image();
+    img.onload=function(){
+      var MAX=1600;
+      var w=img.width,h=img.height;
+      if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+      var canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      var compressed=canvas.toDataURL('image/jpeg',0.82);
+      var thumbImg=document.getElementById('scan-thumb-img');if(thumbImg)thumbImg.src=compressed;
+      var base64=compressed.split(',')[1];
+      setLoadingStep('Envoi à GPT-4o Vision…');
+      sendToMakeWebhook(webhookUrl,base64,'image/jpeg',file.name||'document.jpg',scanCurrentType);
+    };
+    img.onerror=function(){
+      // Fallback sans compression
+      var thumbImg=document.getElementById('scan-thumb-img');if(thumbImg)thumbImg.src=dataUrl;
+      var base64=(dataUrl.split(',')[1])||dataUrl;
+      setLoadingStep('Envoi à GPT-4o Vision…');
+      sendToMakeWebhook(webhookUrl,base64,'image/jpeg',file.name||'document.jpg',scanCurrentType);
+    };
+    img.src=dataUrl;
+  };
+  reader.onerror=function(){scanShowState('error');var errEl=document.getElementById('scan-error-msg');if(errEl)errEl.textContent='Impossible de lire le fichier image.';};
+  reader.readAsDataURL(file);
+}
+
+function sendToMakeWebhook(webhookUrl,base64,mimeType,filename,docType){
+  var email=currentUser?(currentUser.email||''):'';
+  var today=new Date();
+  var dateStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  var prompt=SCAN_PROMPTS[docType]||SCAN_PROMPTS.analyse;
+  var payload=JSON.stringify({image_base64:base64,mime_type:mimeType,filename:filename,email:email,date:dateStr,source:'vitalis_app',doc_type:docType,prompt:prompt});
+  var xhr=new XMLHttpRequest();xhr.open('POST',webhookUrl,true);xhr.setRequestHeader('Content-Type','application/json');xhr.timeout=60000;
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4)return;
+    setLoadingStep('Traitement de la réponse…');
+    if(xhr.status>=200&&xhr.status<300&&xhr.responseText){
+      try{
+        // Nettoyer les balises markdown et préambule texte que GPT-4o peut ajouter
+        var raw = xhr.responseText;
+        // Méthode 1 : extraction JSON par accolades (résiste aux préambules)
+        var start = raw.indexOf('{');
+        var end   = raw.lastIndexOf('}');
+        if(start !== -1 && end !== -1 && end > start){
+          raw = raw.substring(start, end + 1);
+        } else {
+          // Fallback : nettoyage markdown classique
+          raw = raw.replace(/```json/gi,'').replace(/```/g,'').trim();
+        }
+        var resp=JSON.parse(raw);
+        handleScanSuccess(resp,dateStr,docType);
+      }catch(e){handleScanSuccessNoData(dateStr,docType);}
+    }else if(xhr.status===0||xhr.status>=500){scanShowState('error');var errEl=document.getElementById('scan-error-msg');if(errEl)errEl.textContent='Erreur réseau. Vérifiez votre connexion.';}
+    else{handleScanSuccessNoData(dateStr,docType);}
+  };
+  xhr.ontimeout=function(){scanShowState('error');var errEl=document.getElementById('scan-error-msg');if(errEl)errEl.textContent='Délai dépassé (60s). Make prend trop de temps.';};
+  xhr.onerror=function(){scanShowState('error');var errEl=document.getElementById('scan-error-msg');if(errEl)errEl.textContent='Impossible de contacter Make.';};
+  xhr.send(payload);
+}
+
+function handleScanSuccess(resp,dateStr,docType){
+  var typeInfo=SCAN_TYPES[docType]||SCAN_TYPES.analyse;
+  var badge=document.getElementById('scan-result-type-badge');
+  if(badge){badge.textContent=typeInfo.label;badge.className='scan-result-type-badge '+typeInfo.badge;}
+  var dateEl=document.getElementById('scan-result-date');if(dateEl)dateEl.textContent='Traité le '+formatDate(dateStr);
+  var markersEl=document.getElementById('scan-result-markers');if(markersEl)markersEl.innerHTML='';
+
+  if(docType==='analyse'){
+    var newRow={email:currentUser?currentUser.email:'',Date:dateStr,'Glycémie':resp['Glycémie']||resp['Glycemie']||'','Ferritine':resp['Ferritine']||resp['ferritine']||'','Cortisol':resp['Cortisol']||resp['cortisol']||'','Vitamine D':resp['Vitamine D']||resp['Vitamine_D']||'','Statut IA':'Analysé','image_url':resp['image_url']||''};
+    allData.unshift(newRow);
+  // Sauvegarder dans l'historique local
+  var thumbImgEl = document.getElementById('scan-thumb-img');
+  var thumbSrc = thumbImgEl ? thumbImgEl.src : '';
+  saveScanToHistory('analyses', resp, dateStr, thumbSrc);
+    if(markersEl){var ml=['Glycémie','Ferritine','Cortisol','Vitamine D'];for(var i=0;i<ml.length;i++){(function(m){var val=newRow[m];var cfg=MARKERS_CONFIG[m];var status=val?cfg.getStatus(val):null;var card=document.createElement('div');card.style.cssText='background:var(--white);border-radius:12px;padding:12px;border:1px solid var(--border);';card.innerHTML='<div style="font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:'+(status?STATUS_COLORS[status.cls]:'#A0A0A0')+';margin-bottom:6px;">'+m+'</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:600;color:var(--text-primary);">'+(val?parseFloat(val).toLocaleString('fr-FR'):'—')+'</div><div style="font-size:10px;color:var(--text-muted);">'+cfg.unit+'</div>'+(status?'<div class="status-badge '+status.cls+'" style="margin-top:6px"><div class="status-dot '+status.cls+'"></div>'+status.label+'</div>':'');markersEl.appendChild(card);})(ml[i]);}}
+    setTimeout(function(){renderHome();renderGraphique();},300);
+
+  } else if(docType==='ordonnance'){
+    var thumbO = document.getElementById('scan-thumb-img');
+    saveScanToHistory('ordonnances', resp, dateStr, thumbO ? thumbO.src : '');
+    // Sauvegarder dans allData pour sync multi-appareils via Sheets
+    var newRowO={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'ordonnance',medecin:resp.medecin||'',specialite:resp.specialite||'',notes:resp.notes||'',renouvellement:resp.renouvellement||'','Statut IA':'Analysé','image_url':resp['image_url']||''};
+    allData.unshift(newRowO);
+    if(markersEl){
+      var h='<div style="grid-column:1/-1">';
+      if(resp.medecin)h+='<div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;">👨‍⚕️ '+resp.medecin+(resp.specialite?' · '+resp.specialite:'')+'</div>';
+      if(resp.medicaments&&resp.medicaments.length){for(var j=0;j<resp.medicaments.length;j++){var med=resp.medicaments[j];h+='<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid var(--green);"><div style="font-size:13px;font-weight:600;color:var(--text-primary);">'+med.nom+(med.dosage?' <span style=\'font-weight:400;color:var(--text-muted)\'>'+med.dosage+'</span>':'')+'</div>'+(med.posologie?'<div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">'+med.posologie+'</div>':'')+(med.duree?'<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">⏱ '+med.duree+'</div>':'')+'</div>';}}
+      else{h+='<div style="font-size:13px;color:var(--text-muted);text-align:center;padding:16px;">Ordonnance enregistrée.</div>';}
+      h+='</div>';markersEl.innerHTML=h;
+    }
+  } else if(docType==='imagerie'){
+    var thumbI = document.getElementById('scan-thumb-img');
+    saveScanToHistory('imagerie', resp, dateStr, thumbI ? thumbI.src : '');
+    // Sauvegarder dans allData pour sync multi-appareils via Sheets
+    var newRowI={email:currentUser?currentUser.email:'',Date:dateStr,doc_type:'imagerie',type_examen:resp.type_examen||'',region:resp.region||'',conclusions:resp.conclusions||'',recommandations:resp.recommandations||'','Statut IA':'Analysé','image_url':resp['image_url']||''};
+    allData.unshift(newRowI);
+    if(markersEl){
+      var ih='<div style="grid-column:1/-1">';
+      if(resp.type_examen)ih+='<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;border-left:3px solid #3B6B9E;"><div style="font-size:11px;font-weight:700;color:#3B6B9E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Examen</div><div style="font-size:13px;font-weight:600;">'+resp.type_examen+'</div>'+(resp.region?'<div style="font-size:11px;color:var(--text-secondary);">'+resp.region+'</div>':'')+'</div>';
+      if(resp.conclusions)ih+='<div style="background:var(--white);border-radius:10px;padding:12px;border:1px solid var(--border);margin-bottom:8px;"><div style="font-size:11px;font-weight:700;color:#3B6B9E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Conclusions</div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">'+resp.conclusions+'</div></div>';
+      if(resp.recommandations)ih+='<div style="background:#EBF2FA;border-radius:10px;padding:12px;border-left:3px solid #3B6B9E;"><div style="font-size:12px;color:#2A4E7A;line-height:1.5;">📋 '+resp.recommandations+'</div></div>';
+      ih+='</div>';markersEl.innerHTML=ih;
+    }
+  }
+  scanShowState('result');
+}
+
+function handleScanSuccessNoData(dateStr,docType){
+  var typeInfo=SCAN_TYPES[docType]||SCAN_TYPES.analyse;
+  var badge=document.getElementById('scan-result-type-badge');
+  if(badge){badge.textContent=typeInfo.label;badge.className='scan-result-type-badge '+typeInfo.badge;}
+  scanShowState('result');
+  var dateEl=document.getElementById('scan-result-date');if(dateEl)dateEl.textContent='Envoyé le '+formatDate(dateStr)+' · En cours de traitement';
+  var markersEl=document.getElementById('scan-result-markers');if(markersEl)markersEl.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;font-size:13px;color:var(--text-muted);">Make traite votre document…<br>Revenez dans quelques instants.</div>';
+}
+
+// ── PROTOCOLES DÉTAILLÉS PAR MARQUEUR
+var PROTOCOLE_DETAIL_DATA = {
+  'Glycémie': {
+    icon: '\U0001f4d1',
+    title: 'Votre Protocole Glycémie & Longévité',
+    trigger: "Ce guide vous accompagne suite à un résultat supérieur à 1,0 g/L.",
+    accentColor: '#E8521A',
+    sections: [
+      {
+        num: '1',
+        title: "La Règle d'Or : L'Ordre Alimentaire",
+        intro: "L'ordre dans lequel vous mangez réduit le pic de glucose de <strong>75%</strong>.",
+        type: 'bullets',
+        items: [
+          { label: 'Fibres en premier', desc: 'Salade, légumes verts, crudités.' },
+          { label: 'Protéines & Graisses en second', desc: 'Viande, poisson, œufs, avocat.' },
+          { label: 'Glucides en dernier', desc: 'Pain, pâtes, riz, fruits.' }
+        ]
+      },
+      {
+        num: '2',
+        title: 'Le “Muscle à Glucose”',
+        type: 'bullets',
+        items: [
+          { label: 'Action', desc: 'Marchez <strong>10 à 15 min</strong> dans les 30 min après le repas.' },
+          { label: 'Effet', desc: 'Vos muscles pompent le sucre du sang immédiatement.' }
+        ]
+      },
+      {
+        num: '3',
+        title: "L'Astuce du Vinaigre",
+        type: 'highlight',
+        text: "Buvez 1 c.à.s de vinaigre de cidre dans un grand verre d'eau avant un repas riche en glucides pour lisser la courbe."
+      },
+      {
+        num: '4',
+        title: 'Les Aliments “Boucliers”',
+        type: 'foods',
+        items: [
+          { icon: '🌿', name: 'Cannelle', desc: "Améliore la réponse à l'insuline" },
+          { icon: '🥦', name: 'Brocoli', desc: 'Riche en fibres et chrome' },
+          { icon: '🌰', name: 'Amandes', desc: 'Stabilisent la glycémie' },
+          { icon: '🍵', name: 'Thé Vert', desc: 'Antioxydants protecteurs' }
+        ]
+      }
+    ]
+  },
+  'Vitamine D': {
+    icon: '☀️',
+    title: 'Mon Protocole : Vitamine D',
+    trigger: "Stratégie de correction du déficit, soutien de l’immunité et optimisation de la fixation du calcium.",
+    accentColor: '#D4A017',
+    sections: [
+      {
+        num: '💊',
+        title: "Supplémentation Ciblée",
+        type: 'bullets',
+        items: [
+          { label: "⚡ Vitamine D3 (Cholécalciférol) & K2 (MK-7)", desc: "Prendre 4000 UI de Vitamine D3 sous forme huileuse au cours du repas le plus gras de la journée (généralement le dîner). Associer impérativement à 100 μg de Vitamine K2 pour diriger le calcium vers les os et éviter les calcifications artérielles." },
+          { label: "🌱 Cofacteur Clé : Magnésium Bisglycinate", desc: "Assurer un apport quotidien de 300 mg de magnésium. Les enzymes qui métabolisent la vitamine D dans le foie et les reins ont absolument besoin de magnésium pour l’activer. Un déficit en magnésium peut rendre la supplémentation en vitamine D inefficace." }
+        ]
+      },
+      {
+        num: '⏱️',
+        title: "Chrono-Nutrition & Rythmes",
+        type: 'bullets',
+        items: [
+          { label: "⚠️ Règle d’or (Assimilation & Lipides)", desc: "Ne jamais prendre votre vitamine D à jeun ou avec un simple verre d’eau. Étant une vitamine liposoluble, son taux d’absorption augmente de plus de <strong>50%</strong> lorsqu’elle est ingérée en présence d’acides gras de qualité (avocat, huile d’olive, œufs, poissons gras)." },
+          { label: "🐟 Fenêtre Nutritionnelle & Exposition", desc: "Intégrer des petits poissons gras (sardines, maquereaux) deux fois par semaine. En parallèle, dès le printemps, s’exposer sans protection solaire pendant 15 à 20 minutes entre 11h et 15h (bras et jambes découverts) pour stimuler la synthèse cutanée naturelle sans brûler la peau." }
+        ]
+      }
+    ]
+  },
+  'Ferritine': {
+    icon: '\U0001f9ec',
+    title: 'Mon Protocole : Ferritine',
+    trigger: "Stratégie d’optimisation de vos réserves en fer et réduction de l’inflammation.",
+    accentColor: '#C0392B',
+    sections: [
+      {
+        num: '💊',
+        title: "Supplémentation Ciblée",
+        type: 'bullets',
+        items: [
+          { label: "⚡ L-Citrulline & Fer Bisglycinate", desc: "Prendre 3g de L-Citrulline à jeun le matin pour optimiser la perfusion tissulaire, associé à un apport de fer hautement assimilable si le taux reste inférieur à 40 μg/L." },
+          { label: "🍊 Cofacteur : Vitamine C", desc: "Accompagner la prise d’un apport en antioxydants ou vitamine C (acérola) pour doubler le taux d’absorption intestinale du fer non héminique." }
+        ]
+      },
+      {
+        num: '⏱️',
+        title: "Chrono-Nutrition & Bloqueurs",
+        type: 'bullets',
+        items: [
+          { label: "⚠️ Règle d’or (Thé & Café)", desc: "Espacer la consommation de thé, de café ou d’infusions d’au moins <strong>2 heures</strong> avant et après vos repas. Les tanins inhibent jusqu’à 70% l’assimilation du fer." },
+          { label: "🥩 Fenêtre Nutritionnelle du Midi", desc: "Favoriser les sources de fer héminique (viande rouge de qualité, abats, fruits de mer) lors du déjeuner, associées à des acides organiques (jus de citron, sarrasin)." }
+        ]
+      }
+    ]
+  },
+  'Cortisol': {
+    icon: '\U0001f9e0',
+    title: 'Mon Protocole\u00a0: Cortisol',
+    trigger: "Strat\u00e9gie de r\u00e9gulation de l\u2019axe HPA (stress), soutien de la fatigue nerveuse et optimisation de l\u2019\u00e9nergie.",
+    accentColor: '#2A9D6E',
+    sections: [
+      {
+        num: '\U0001f48a',
+        title: "Suppl\u00e9mentation Cibl\u00e9e",
+        type: 'bullets',
+        items: [
+          { label: "\u26a1 Adaptog\u00e8nes (Ashwagandha KSM-66 & Magn\u00e9sium Bisglycinate)", desc: "Prendre 600\u00a0mg d\u2019Ashwagandha en fin d\u2019apr\u00e8s-midi ou au d\u00eener pour moduler la s\u00e9cr\u00e9tion tardive de cortisol, associ\u00e9 \u00e0 300\u00a0mg de magn\u00e9sium pour stabiliser la membrane neuronale et limiter l\u2019hyperexcitabilit\u00e9 li\u00e9e au stress." },
+          { label: "\U0001f331 Soutien \u00c9nerg\u00e9tique\u00a0: L-Th\u00e9anine", desc: "Consommer 200\u00a0mg de L-Th\u00e9anine (extrait de th\u00e9 vert) durant la matin\u00e9e pour favoriser la production d\u2019ondes alpha c\u00e9r\u00e9brales, procurant un \u00e9tat d\u2019alerte calme sans l\u2019effet d\u2019anxi\u00e9t\u00e9 parfois d\u00e9clench\u00e9 par la caf\u00e9ine." }
+        ]
+      },
+      {
+        num: '\u23f1\ufe0f',
+        title: "Chrono-Nutrition & Rythmes",
+        type: 'bullets',
+        items: [
+          { label: "\u26a0\ufe0f R\u00e8gle d\u2019or (Caf\u00e9ine & Sommeil)", desc: "Supprimer compl\u00e8tement l\u2019usage de la caf\u00e9ine (caf\u00e9, boissons \u00e9nergisantes) apr\u00e8s <strong>14h00</strong>. La demi-vie de la caf\u00e9ine perturbe la baisse naturelle du cortisol n\u00e9cessaire au d\u00e9clenchement de la m\u00e9latonine (sommeil)." },
+          { label: "\u2600\ufe0f Exposition Lumineuse Matinale", desc: "S\u2019exposer \u00e0 la lumi\u00e8re naturelle du soleil dans les <strong>30 minutes</strong> apr\u00e8s le r\u00e9veil pendant au moins 10 \u00e0 15 minutes. Cela permet de synchroniser l\u2019horloge biologique et de valider le pic de cortisol matinal sain, garantissant une meilleure \u00e9nergie toute la journ\u00e9e." }
+        ]
+      }
+    ]
+  }
+};
+
+function openProtocoleDetail(marker) {
+  var data = PROTOCOLE_DETAIL_DATA[marker];
+  if (!data) { navigate('protocole'); return; }
+
+  var html = '<div class="protocole-detail-wrap">';
+
+  // Header
+  html += '<div class="protocole-detail-header">';
+  html += '<div class="protocole-detail-patient">' + (currentUser ? (currentUser['Prénom']||'') + ' ' + (currentUser.Nom||'') : '') + '</div>';
+  html += '<div class="protocole-detail-title">' + data.icon + ' ' + data.title + '</div>';
+  html += '<div class="protocole-detail-trigger">' + data.trigger + '</div>';
+  html += '</div>';
+
+  // Body
+  html += '<div class="protocole-detail-body">';
+
+  for (var i = 0; i < data.sections.length; i++) {
+    var sec = data.sections[i];
+    html += '<div class="protocole-section">';
+    html += '<div class="protocole-section-title"><span class="protocole-section-num" style="background:' + data.accentColor + '">' + sec.num + '</span>' + sec.title + '</div>';
+
+    if (sec.intro) {
+      html += '<div class="protocole-section-intro">' + sec.intro + '</div>';
+    }
+
+    if (sec.type === 'bullets') {
+      html += '<div class="protocole-bullet-list">';
+      for (var j = 0; j < sec.items.length; j++) {
+        html += '<div class="protocole-bullet" style="border-left-color:' + data.accentColor + '"><strong>' + sec.items[j].label + '</strong> : ' + sec.items[j].desc + '</div>';
+      }
+      html += '</div>';
+    } else if (sec.type === 'highlight') {
+      html += '<div class="protocole-highlight-box" style="background:' + data.accentColor + '18;border-left-color:' + data.accentColor + '"><div class="protocole-highlight-text">' + sec.text + '</div></div>';
+    } else if (sec.type === 'foods') {
+      html += '<div class="protocole-food-grid">';
+      for (var k = 0; k < sec.items.length; k++) {
+        html += '<div class="protocole-food-card"><div class="protocole-food-icon">' + sec.items[k].icon + '</div><div><div class="protocole-food-name">' + sec.items[k].name + '</div><div class="protocole-food-desc">' + sec.items[k].desc + '</div></div></div>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+  }
+
+  html += '</div></div>';
+
+  document.getElementById('protocole-detail-content').innerHTML = html;
+
+  // Afficher l'écran
+  for (var s = 0; s < SCREENS.length; s++) {
+    var el = document.getElementById('screen-' + SCREENS[s]);
+    if (el) el.classList.remove('active');
+  }
+  // Ajouter screen-protocole-detail à la liste si pas déjà
+  var detailEl = document.getElementById('screen-protocole-detail');
+  if (detailEl) detailEl.classList.add('active');
+}
+
+function closeProtocoleDetail() {
+  var detailEl = document.getElementById('screen-protocole-detail');
+  if (detailEl) detailEl.classList.remove('active');
+  navigate('analyses');
+}
+
+// ── PROTOCOLES THÉMATIQUES
+var PROTOCOLE_SLUGS = ['nutrition', 'sommeil', 'activite', 'stress', 'cardio', 'jeune'];
+
+function openProtocoleTheme(slug) {
+  // Masquer tous les écrans
+  for (var i = 0; i < SCREENS.length; i++) {
+    var el = document.getElementById('screen-' + SCREENS[i]);
+    if (el) el.classList.remove('active');
+  }
+  // Masquer autres thèmes
+  for (var j = 0; j < PROTOCOLE_SLUGS.length; j++) {
+    var t = document.getElementById('screen-protocole-' + PROTOCOLE_SLUGS[j]);
+    if (t) t.classList.remove('active');
+  }
+  var target = document.getElementById('screen-protocole-' + slug);
+  if (target) target.classList.add('active');
+  // Mettre à jour nav active
+  var navBtns = document.querySelectorAll('.nav-item');
+  for (var k = 0; k < navBtns.length; k++) navBtns[k].classList.remove('active');
+  var navProto = document.getElementById('nav-protocole');
+  if (navProto) navProto.classList.add('active');
+}
+
+function closeProtocoleTheme() {
+  for (var j = 0; j < PROTOCOLE_SLUGS.length; j++) {
+    var t = document.getElementById('screen-protocole-' + PROTOCOLE_SLUGS[j]);
+    if (t) t.classList.remove('active');
+  }
+  navigate('protocole');
+}
+</script>
+</body>
+</html>
