@@ -1012,6 +1012,9 @@ document.getElementById('login-email').addEventListener('keydown',function(e){if
 var SCREENS=['accueil','analyses','protocole','graphique','historique','scanner','contact','protocole-detail'];
 var NAV_IDS=['accueil','scanner','analyses','protocole','historique','graphique'];
 function navigate(screen){
+  // Fermer tous les sous-écrans historique avant de naviguer
+  var subs=['ordonnances','analyses','imagerie','detail','detail-ordonnance','detail-imagerie'];
+  for(var s=0;s<subs.length;s++){var sub=document.getElementById('screen-historique-'+subs[s]);if(sub)sub.classList.remove('active');}
   for(var i=0;i<SCREENS.length;i++){var el=document.getElementById('screen-'+SCREENS[i]);if(el)el.classList[SCREENS[i]===screen?'add':'remove']('active');}
   for(var j=0;j<NAV_IDS.length;j++){var btn=document.getElementById('nav-'+NAV_IDS[j]);if(btn)btn.classList[NAV_IDS[j]===screen?'add':'remove']('active');}
   if(screen==='accueil')renderHome();
